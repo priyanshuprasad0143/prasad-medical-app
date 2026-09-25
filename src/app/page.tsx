@@ -23,7 +23,11 @@ import {
   Clock,
   Sparkles,
   BarChart3,
-  Award
+  Award,
+  BookOpen,
+  UserCheck,
+  AlertCircle,
+  X
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -38,11 +42,7 @@ function MedicalLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
   return (
     <div className={`${dim} bg-gradient-to-br from-rose-500 via-rose-600 to-rose-700 text-white flex items-center justify-center shadow-lg shadow-rose-600/25 ring-2 ring-rose-100/80 shrink-0 transition-transform hover:scale-105 duration-200`}>
-      <svg
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className={iconDim}
-      >
+      <svg viewBox="0 0 24 24" fill="currentColor" className={iconDim}>
         <path d="M19 10.5h-5.5V5a1.5 1.5 0 0 0-3 0v5.5H5a1.5 1.5 0 0 0 0 3h5.5V19a1.5 1.5 0 0 0 3 0v-5.5H19a1.5 1.5 0 0 0 0-3z" />
       </svg>
     </div>
@@ -72,6 +72,9 @@ interface Invoice {
   payment_mode: string;
   cash_paid: number;
   upi_paid: number;
+  due_amount?: number;
+  notes?: string;
+  is_settled?: boolean;
   created_at: string;
 }
 
@@ -79,6 +82,7 @@ interface SalesSummary {
   totalSales: number;
   totalCash: number;
   totalUpi: number;
+  totalDue: number;
   billCount: number;
 }
 
@@ -103,6 +107,9 @@ export default function PrasadMedicalApp() {
   const desktopProfileRef = useRef<HTMLDivElement>(null);
   const mobileProfileRef = useRef<HTMLDivElement>(null);
 
+  // Tabs: 'pos' | 'stock' | 'credit'
+  const [activeTab, setActiveTab] = useState<'pos' | 'stock' | 'credit'>('pos');
+
   // Time Filter States
   const now = new Date();
   const [filterMode, setFilterMode] = useState<'today' | 'monthly'>('today');
@@ -119,15 +126,16 @@ export default function PrasadMedicalApp() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Dashboard Tabs & States
-  const [activeTab, setActiveTab] = useState<'pos' | 'stock'>('pos');
+  // Dashboard Data
   const [summary, setSummary] = useState<SalesSummary>({
     totalSales: 0,
     totalCash: 0,
     totalUpi: 0,
+    totalDue: 0,
     billCount: 0,
   });
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
+  const [creditInvoices, setCreditInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Inventory & Cart
@@ -135,16 +143,24 @@ export default function PrasadMedicalApp() {
   const [inventory, setInventory] = useState<Medicine[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Customer & Payment
+  // Customer & Payment Form
   const [directAmount, setDirectAmount] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [paymentMode, setPaymentMode] = useState<'UPI' | 'CASH' | 'SPLIT'>('UPI');
+  const [paymentMode, setPaymentMode] = useState<'UPI' | 'CASH' | 'SPLIT' | 'CREDIT'>('UPI');
   const [cashAmount, setCashAmount] = useState('');
   const [upiAmount, setUpiAmount] = useState('');
+  const [paidNowAmount, setPaidNowAmount] = useState('');
+  const [creditNotes, setCreditNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Simplified Add Medicine Form
+  // Settle Modal States
+  const [settleInvoice, setSettleInvoice] = useState<Invoice | null>(null);
+  const [settleAmount, setSettleAmount] = useState('');
+  const [settlePaymentMode, setSettlePaymentMode] = useState<'CASH' | 'UPI'>('CASH');
+  const [settleLoading, setSettleLoading] = useState(false);
+
+  // Add Medicine Form
   const [newMed, setNewMed] = useState({
     name: '',
     selling_price: '',
@@ -206,25 +222,41 @@ export default function PrasadMedicalApp() {
 
     const { data: salesData } = await supabase
       .from('sales')
-      .select('id, bill_no, customer_name, customer_phone, total_amount, payment_mode, cash_paid, upi_paid, created_at')
+      .select('id, bill_no, customer_name, customer_phone, total_amount, payment_mode, cash_paid, upi_paid, due_amount, notes, is_settled, created_at')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
       .order('created_at', { ascending: false });
+
+    // Fetch All Pending Credits for Credit Ledger
+    const { data: allCredits } = await supabase
+      .from('sales')
+      .select('*')
+      .gt('due_amount', 0)
+      .eq('is_settled', false)
+      .order('created_at', { ascending: false });
+
+    if (allCredits) {
+      setCreditInvoices(allCredits);
+    }
 
     if (salesData) {
       let salesSum = 0;
       let cashSum = 0;
       let upiSum = 0;
+      let dueSum = 0;
+
       salesData.forEach((s) => {
         salesSum += Number(s.total_amount) || 0;
         cashSum += Number(s.cash_paid) || 0;
         upiSum += Number(s.upi_paid) || 0;
+        dueSum += Number(s.due_amount) || 0;
       });
 
       setSummary({
         totalSales: salesSum,
         totalCash: cashSum,
         totalUpi: upiSum,
+        totalDue: dueSum,
         billCount: salesData.length,
       });
 
@@ -283,7 +315,7 @@ export default function PrasadMedicalApp() {
     }
   }, [currentUser, filterMode, selectedMonth, selectedYear]);
 
-  // Handle Login
+  // Auth Handlers
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -302,7 +334,6 @@ export default function PrasadMedicalApp() {
     }
   };
 
-  // Handle Logout
   const handleLogout = async () => {
     setIsProfileOpen(false);
     try {
@@ -317,6 +348,10 @@ export default function PrasadMedicalApp() {
   // Cart operations
   const cartSubtotal = cart.reduce((acc, item) => acc + item.selling_price * item.qty, 0);
   const finalPayable = cart.length > 0 ? cartSubtotal : (parseFloat(directAmount) || 0);
+
+  // Credit / Due Calculation
+  const upfrontPaid = paymentMode === 'CREDIT' ? (parseFloat(paidNowAmount) || 0) : finalPayable;
+  const calculatedDue = paymentMode === 'CREDIT' ? Math.max(0, finalPayable - upfrontPaid) : 0;
 
   const addToCart = (med: Medicine) => {
     const existing = cart.find((i) => i.id === med.id);
@@ -360,29 +395,111 @@ export default function PrasadMedicalApp() {
     }
   };
 
+  // Open Settle Modal
+  const openSettleModal = (invoice: Invoice) => {
+    setSettleInvoice(invoice);
+    setSettleAmount(String(invoice.due_amount || ''));
+    setSettlePaymentMode('CASH');
+  };
+
+  // Execute Partial or Full Settle
+  const handleExecuteSettle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settleInvoice) return;
+
+    const amountToPay = parseFloat(settleAmount);
+    const currentDue = Number(settleInvoice.due_amount || 0);
+
+    if (isNaN(amountToPay) || amountToPay <= 0) {
+      return alert('Please enter a valid payment amount.');
+    }
+    if (amountToPay > currentDue) {
+      return alert(`Payment amount (₹${amountToPay}) cannot be greater than balance due (₹${currentDue}).`);
+    }
+
+    setSettleLoading(true);
+
+    const updatedDue = Math.max(0, currentDue - amountToPay);
+    const isNowSettled = updatedDue === 0;
+
+    let updatedCash = Number(settleInvoice.cash_paid || 0);
+    let updatedUpi = Number(settleInvoice.upi_paid || 0);
+
+    if (settlePaymentMode === 'CASH') {
+      updatedCash += amountToPay;
+    } else {
+      updatedUpi += amountToPay;
+    }
+
+    const { error } = await supabase
+      .from('sales')
+      .update({
+        cash_paid: updatedCash,
+        upi_paid: updatedUpi,
+        due_amount: updatedDue,
+        is_settled: isNowSettled,
+      })
+      .eq('id', settleInvoice.id);
+
+    setSettleLoading(false);
+
+    if (error) {
+      alert('Error updating payment: ' + error.message);
+    } else {
+      alert(
+        isNowSettled
+          ? `Payment of ₹${amountToPay} recorded. Due balance for ${settleInvoice.customer_name} is now fully cleared.`
+          : `Partial payment of ₹${amountToPay} recorded. Remaining balance due: ₹${updatedDue.toFixed(2)}.`
+      );
+      setSettleInvoice(null);
+      loadData();
+    }
+  };
+
   // Checkout Bill
   const handleFinalCheckout = async () => {
     if (finalPayable <= 0) {
       return alert('Please enter a valid bill amount or add medicines to cart.');
     }
 
+    if (paymentMode === 'CREDIT') {
+      if (!customerName.trim()) {
+        return alert('Customer Name is mandatory for credit entries.');
+      }
+      const cleanPhone = customerPhone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        return alert('A valid 10-digit mobile number is mandatory for credit customer accounts.');
+      }
+    }
+
     setSubmitting(true);
 
     let finalCash = 0;
     let finalUpi = 0;
+    let finalDue = 0;
 
-    if (paymentMode === 'CASH') finalCash = finalPayable;
-    else if (paymentMode === 'UPI') finalUpi = finalPayable;
-    else {
+    if (paymentMode === 'CASH') {
+      finalCash = finalPayable;
+    } else if (paymentMode === 'UPI') {
+      finalUpi = finalPayable;
+    } else if (paymentMode === 'SPLIT') {
       finalCash = parseFloat(cashAmount) || 0;
       finalUpi = parseFloat(upiAmount) || 0;
       if (Math.round((finalCash + finalUpi) * 100) / 100 !== Math.round(finalPayable * 100) / 100) {
         setSubmitting(false);
         return alert(`Split payment error: Cash (₹${finalCash}) + UPI (₹${finalUpi}) must equal total (₹${finalPayable}).`);
       }
+    } else if (paymentMode === 'CREDIT') {
+      finalCash = parseFloat(paidNowAmount) || 0;
+      finalDue = calculatedDue;
     }
 
     const billNo = `PM-${Date.now().toString().slice(-6)}`;
+
+    let autoNotes = creditNotes.trim();
+    if (cart.length > 0 && !autoNotes) {
+      autoNotes = cart.map((i) => `${i.name} (${i.qty}x)`).join(', ');
+    }
 
     const { data: saleData, error: saleErr } = await supabase
       .from('sales')
@@ -396,6 +513,9 @@ export default function PrasadMedicalApp() {
           payment_mode: paymentMode,
           cash_paid: finalCash,
           upi_paid: finalUpi,
+          due_amount: finalDue,
+          notes: autoNotes || null,
+          is_settled: finalDue === 0,
         },
       ])
       .select()
@@ -426,26 +546,50 @@ export default function PrasadMedicalApp() {
     setCustomerPhone('');
     setCashAmount('');
     setUpiAmount('');
+    setPaidNowAmount('');
+    setCreditNotes('');
     setSubmitting(false);
     loadData();
 
-    alert(`Invoice ${billNo} generated successfully.`);
+    alert(
+      paymentMode === 'CREDIT'
+        ? `Invoice ${billNo} recorded with credit due of ₹${finalDue.toFixed(2)}.`
+        : `Invoice ${billNo} generated successfully.`
+    );
   };
 
-  // WhatsApp Slip Generator
-  const sendWhatsAppSlip = (inv: Invoice) => {
+  // WhatsApp Slip & Reminder Generator
+  const sendWhatsAppSlip = (inv: Invoice, isReminder = false) => {
     const phone = inv.customer_phone ? inv.customer_phone.replace(/\D/g, '') : '';
-    const textMsg = encodeURIComponent(
-      `*PRASAD MEDICAL - INVOICE*\n` +
-      `Bill No: ${inv.bill_no}\n` +
-      `Date: ${new Date(inv.created_at).toLocaleDateString('en-IN')}\n` +
-      `Customer: ${inv.customer_name}\n` +
-      `-----------------------------\n` +
-      `Total Amount: ₹${Number(inv.total_amount).toFixed(2)}\n` +
-      `Payment Mode: ${inv.payment_mode}\n` +
-      `-----------------------------\n` +
-      `Thank you for your visit! Get well soon.\n*Prasad Medical Store*\nJaiswal Market, Main Road Kathara`
-    );
+    
+    let textMsg = '';
+    if (isReminder || (inv.due_amount && inv.due_amount > 0)) {
+      textMsg = encodeURIComponent(
+        `*PRASAD MEDICAL - PAYMENT REMINDER*\n` +
+        `Bill No: ${inv.bill_no}\n` +
+        `Date: ${new Date(inv.created_at).toLocaleDateString('en-IN')}\n` +
+        `Customer: ${inv.customer_name}\n` +
+        `-----------------------------\n` +
+        `Total Bill: ₹${Number(inv.total_amount).toFixed(2)}\n` +
+        `Paid Amount: ₹${(Number(inv.cash_paid) + Number(inv.upi_paid)).toFixed(2)}\n` +
+        `*Remaining Balance Due: ₹${Number(inv.due_amount).toFixed(2)}*\n` +
+        (inv.notes ? `Prescription/Items: ${inv.notes}\n` : '') +
+        `-----------------------------\n` +
+        `Please clear your pending balance at your earliest convenience.\n*Prasad Medical Store*\nJaiswal Market, Main Road Kathara`
+      );
+    } else {
+      textMsg = encodeURIComponent(
+        `*PRASAD MEDICAL - INVOICE*\n` +
+        `Bill No: ${inv.bill_no}\n` +
+        `Date: ${new Date(inv.created_at).toLocaleDateString('en-IN')}\n` +
+        `Customer: ${inv.customer_name}\n` +
+        `-----------------------------\n` +
+        `Total Amount: ₹${Number(inv.total_amount).toFixed(2)}\n` +
+        `Payment Mode: ${inv.payment_mode}\n` +
+        `-----------------------------\n` +
+        `Thank you for your visit! Get well soon.\n*Prasad Medical Store*\nJaiswal Market, Main Road Kathara`
+      );
+    }
 
     const url = phone.length >= 10
       ? `https://api.whatsapp.com/send?phone=91${phone.slice(-10)}&text=${textMsg}`
@@ -511,6 +655,7 @@ export default function PrasadMedicalApp() {
 
   const daysWithSales = monthlyChartData.filter((d) => d.total > 0).length || 1;
   const averageDailySales = Math.round(summary.totalSales / daysWithSales);
+  const totalMarketCredit = creditInvoices.reduce((acc, curr) => acc + (Number(curr.due_amount) || 0), 0);
 
   if (checkingAuth) {
     return (
@@ -675,7 +820,7 @@ export default function PrasadMedicalApp() {
             </div>
           </div>
 
-          {/* Navigation Controls */}
+          {/* Navigation Controls: Clean English Tabs */}
           <div className="flex items-center gap-2 justify-between md:justify-end overflow-x-auto pb-0.5 md:pb-0">
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
@@ -687,6 +832,16 @@ export default function PrasadMedicalApp() {
                 }`}
               >
                 <ShoppingCart className="w-3.5 h-3.5 text-rose-600" /> POS Counter
+              </button>
+              <button
+                onClick={() => setActiveTab('credit')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 touch-manipulation cursor-pointer ${
+                  activeTab === 'credit'
+                    ? 'bg-white text-amber-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-amber-600" /> Credit Ledger ({creditInvoices.length})
               </button>
               <button
                 onClick={() => setActiveTab('stock')}
@@ -772,7 +927,7 @@ export default function PrasadMedicalApp() {
             </h2>
             <p className="text-xs text-slate-400 font-medium">
               {filterMode === 'today'
-                ? "Live real-time counter sales and settlement ledger"
+                ? "Live real-time counter sales, cash drawer, and credit tracking"
                 : `Audited records for ${MONTHS[selectedMonth]} ${selectedYear}`}
             </p>
           </div>
@@ -831,60 +986,60 @@ export default function PrasadMedicalApp() {
           </div>
         </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+        {/* 5 Financial Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                {filterMode === 'today' ? 'Revenue (Today)' : `Revenue (${MONTHS[selectedMonth].slice(0, 3)})`}
-              </span>
-              <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100 shadow-2xs">
-                <Activity className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Revenue</span>
+              <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100">
+                <Activity className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight truncate">₹{summary.totalSales.toLocaleString('en-IN')}</div>
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 font-semibold">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-500"></span>
-              <span className="truncate">{summary.billCount} Invoices generated</span>
-            </div>
+            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate">₹{summary.totalSales.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-slate-500 mt-1 font-semibold">{summary.billCount} Invoices</p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Cash Drawer</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 shadow-2xs">
-                <Banknote className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Cash In Hand</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+                <Banknote className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-black text-emerald-600 tracking-tight truncate">₹{summary.totalCash.toLocaleString('en-IN')}</div>
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 font-semibold">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span className="truncate">Drawer balance</span>
-            </div>
+            <div className="text-lg sm:text-xl font-black text-emerald-600 tracking-tight truncate">₹{summary.totalCash.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-slate-500 mt-1 font-semibold">Counter balance</p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">QR / UPI</span>
-              <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100 shadow-2xs">
-                <QrCode className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Bank / UPI</span>
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                <QrCode className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-black text-indigo-600 tracking-tight truncate">₹{summary.totalUpi.toLocaleString('en-IN')}</div>
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 font-semibold">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-              <span className="truncate">Direct bank settlement</span>
-            </div>
+            <div className="text-lg sm:text-xl font-black text-indigo-600 tracking-tight truncate">₹{summary.totalUpi.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-slate-500 mt-1 font-semibold">Bank credit</p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all">
+            <div className="flex justify-between items-center text-slate-500 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Market Credit</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200">
+                <AlertCircle className="w-3.5 h-3.5" />
+              </div>
+            </div>
+            <div className="text-lg sm:text-xl font-black text-amber-600 tracking-tight truncate">₹{totalMarketCredit.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-amber-700 mt-1 font-bold">{creditInvoices.length} Pending accounts</p>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all col-span-2 lg:col-span-1">
             <div className="flex justify-between items-center text-slate-500 mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Digital Share</span>
-              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100 shadow-2xs">
-                <IndianRupee className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
+                <IndianRupee className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               {summary.totalSales > 0 ? Math.round((summary.totalUpi / summary.totalSales) * 100) : 0}%
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
@@ -1119,7 +1274,7 @@ export default function PrasadMedicalApp() {
                 </div>
               </div>
 
-              {/* Right Column: Checkout & Payment Terminal */}
+              {/* Right Column: Checkout & Payment Terminal with Credit Mode */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4 relative overflow-hidden">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1147,50 +1302,65 @@ export default function PrasadMedicalApp() {
                     </div>
                   )}
 
+                  {/* Customer Information (MANDATORY FOR CREDIT) */}
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1">Customer Name (Optional)</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                        Customer Name {paymentMode === 'CREDIT' ? <span className="text-rose-500">* (Mandatory for Credit)</span> : '(Optional)'}
+                      </label>
                       <input
                         type="text"
-                        placeholder="e.g. Rahul Sharma"
+                        required={paymentMode === 'CREDIT'}
+                        placeholder="e.g. Ramesh Kumar"
                         value={customerName}
                         onChange={(e) => setCustomerName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-600 font-medium"
+                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium ${
+                          paymentMode === 'CREDIT' && !customerName.trim() ? 'border-amber-400 focus:border-amber-500' : 'border-slate-200 focus:border-rose-600'
+                        }`}
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1">Mobile No (WhatsApp Slip)</label>
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                        Mobile Number {paymentMode === 'CREDIT' ? <span className="text-rose-500">* (10-Digit Mandatory)</span> : '(WhatsApp Slip)'}
+                      </label>
                       <input
                         type="tel"
+                        required={paymentMode === 'CREDIT'}
                         placeholder="10-digit mobile number"
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-600 font-medium"
+                        className={`w-full bg-slate-50 border rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none font-medium ${
+                          paymentMode === 'CREDIT' && customerPhone.replace(/\D/g, '').length < 10 ? 'border-amber-400 focus:border-amber-500' : 'border-slate-200 focus:border-rose-600'
+                        }`}
                       />
                     </div>
                   </div>
 
+                  {/* Payment Method Selector */}
                   <div className="pt-2 border-t border-slate-100">
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Payment Method</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['UPI', 'CASH', 'SPLIT'] as const).map((m) => (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {(['UPI', 'CASH', 'SPLIT', 'CREDIT'] as const).map((m) => (
                         <button
                           key={m}
                           type="button"
                           onClick={() => setPaymentMode(m)}
-                          className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all touch-manipulation cursor-pointer ${
+                          className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all touch-manipulation cursor-pointer text-center ${
                             paymentMode === m
-                              ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20'
+                              ? m === 'CREDIT'
+                                ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20'
+                                : 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20'
                               : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                           }`}
                         >
-                          {m === 'UPI' ? 'QR / UPI' : m === 'CASH' ? 'Cash' : 'Split'}
+                          {m === 'UPI' ? 'QR / UPI' : m === 'CASH' ? 'Cash' : m === 'SPLIT' ? 'Split' : 'Credit'}
                         </button>
                       ))}
                     </div>
                   </div>
 
+                  {/* Split Box */}
                   {paymentMode === 'SPLIT' && (
                     <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                       <div>
@@ -1216,30 +1386,84 @@ export default function PrasadMedicalApp() {
                     </div>
                   )}
 
+                  {/* Credit Form Box */}
+                  {paymentMode === 'CREDIT' && (
+                    <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-xs font-bold uppercase text-amber-800 block mb-1">Amount Paid Now (₹)</span>
+                          <input
+                            type="number"
+                            placeholder="0 (Fully Due)"
+                            value={paidNowAmount}
+                            onChange={(e) => setPaidNowAmount(e.target.value)}
+                            className="w-full bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-bold text-slate-900 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold uppercase text-amber-800 block mb-1">Balance Due (Credit)</span>
+                          <div className="w-full bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-black text-rose-600">
+                            ₹{calculatedDue.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-bold uppercase text-amber-800 block mb-1">
+                          Prescription / Medicine Notes (Optional)
+                        </label>
+                        <textarea
+                          rows={2}
+                          placeholder="List medicines taken on credit (e.g. Paracetamol 2 strips, cough syrup)..."
+                          value={creditNotes}
+                          onChange={(e) => setCreditNotes(e.target.value)}
+                          className="w-full bg-white border border-amber-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none placeholder-slate-400 font-medium"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Summary Box */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
                     <div className="flex justify-between text-xs text-slate-500 font-medium">
-                      <span>Subtotal</span>
+                      <span>Total Invoice</span>
                       <span>₹{finalPayable.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-xs text-slate-500 font-medium">
-                      <span>Discount</span>
-                      <span className="text-emerald-600 font-bold">₹0.00</span>
-                    </div>
-                    <div className="flex justify-between items-baseline pt-2.5 border-t border-slate-200">
-                      <span className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">Net Payable</span>
-                      <span className="text-2xl sm:text-3xl font-black text-rose-600">₹{finalPayable.toFixed(2)}</span>
-                    </div>
+                    {paymentMode === 'CREDIT' ? (
+                      <>
+                        <div className="flex justify-between text-xs text-emerald-600 font-medium">
+                          <span>Received Now</span>
+                          <span>₹{(parseFloat(paidNowAmount) || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-baseline pt-2.5 border-t border-slate-200">
+                          <span className="text-xs sm:text-sm font-bold text-amber-700 uppercase tracking-wide">Credit Due</span>
+                          <span className="text-2xl sm:text-3xl font-black text-amber-600">₹{calculatedDue.toFixed(2)}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between items-baseline pt-2.5 border-t border-slate-200">
+                        <span className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">Net Payable</span>
+                        <span className="text-2xl sm:text-3xl font-black text-rose-600">₹{finalPayable.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
 
                   <button
                     type="button"
                     disabled={submitting || finalPayable <= 0}
                     onClick={handleFinalCheckout}
-                    className="w-full bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-extrabold py-3.5 rounded-xl transition-all shadow-lg shadow-rose-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation active:scale-[0.99] border-t border-rose-400/30 cursor-pointer text-sm"
+                    className={`w-full text-white font-extrabold py-3.5 rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation active:scale-[0.99] border-t border-white/20 cursor-pointer text-sm ${
+                      paymentMode === 'CREDIT'
+                        ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 shadow-amber-600/30'
+                        : 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 shadow-rose-600/30'
+                    }`}
                   >
                     <CheckCircle2 className="w-5 h-5" />
-                    {submitting ? 'Generating Invoice...' : `Complete Invoice (₹${finalPayable.toFixed(2)})`}
+                    {submitting
+                      ? 'Saving...'
+                      : paymentMode === 'CREDIT'
+                      ? `Save Credit Bill (Due: ₹${calculatedDue.toFixed(2)})`
+                      : `Complete Invoice (₹${finalPayable.toFixed(2)})`}
                   </button>
                 </div>
               </div>
@@ -1299,10 +1523,12 @@ export default function PrasadMedicalApp() {
                                   ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                   : inv.payment_mode === 'CASH'
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : inv.payment_mode === 'CREDIT'
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
                               }`}
                             >
-                              {inv.payment_mode}
+                              {inv.payment_mode === 'CREDIT' ? `Credit (Due: ₹${inv.due_amount || 0})` : inv.payment_mode}
                             </span>
                           </td>
                           <td className="py-3 px-4 font-black text-slate-900">₹{Number(inv.total_amount).toFixed(2)}</td>
@@ -1335,7 +1561,93 @@ export default function PrasadMedicalApp() {
           </div>
         )}
 
-        {/* Tab 2: Stock Management */}
+        {/* Tab 2: Credit Ledger (Customer Credit Register) */}
+        {activeTab === 'credit' && (
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden space-y-4">
+            <div className="px-5 py-4 border-b border-slate-200 bg-amber-50/40 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 tracking-tight">
+                  <BookOpen className="w-4 h-4 text-amber-600" /> Credit Ledger (Customer Credit Register)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">Record partial or full payments and send WhatsApp reminders</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-300">
+                  Total Market Credit: ₹{totalMarketCredit.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4">Customer Details</th>
+                    <th className="py-3 px-4">Medicines / Notes</th>
+                    <th className="py-3 px-4">Total Bill</th>
+                    <th className="py-3 px-4">Paid So Far</th>
+                    <th className="py-3 px-4">Balance Due</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
+                  {creditInvoices.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">
+                        All customer accounts are clear. No pending credit records.
+                      </td>
+                    </tr>
+                  ) : (
+                    creditInvoices.map((cred) => {
+                      const totalPaidSoFar = (Number(cred.cash_paid) || 0) + (Number(cred.upi_paid) || 0);
+
+                      return (
+                        <tr key={cred.id} className="hover:bg-amber-50/30 transition-colors">
+                          <td className="py-3.5 px-4 text-xs font-mono text-slate-500 whitespace-nowrap">
+                            {new Date(cred.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <p className="font-bold text-slate-900 leading-tight">{cred.customer_name}</p>
+                            <a href={`tel:${cred.customer_phone}`} className="text-xs text-teal-600 font-medium hover:underline">
+                              {cred.customer_phone}
+                            </a>
+                          </td>
+                          <td className="py-3.5 px-4 text-xs text-slate-600 max-w-[200px] truncate" title={cred.notes || ''}>
+                            {cred.notes || 'Direct Bill (No medicine note)'}
+                          </td>
+                          <td className="py-3.5 px-4 font-semibold text-slate-700">₹{Number(cred.total_amount).toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-semibold text-emerald-600">₹{totalPaidSoFar.toFixed(2)}</td>
+                          <td className="py-3.5 px-4 font-black text-rose-600 text-base">₹{Number(cred.due_amount).toFixed(2)}</td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => sendWhatsAppSlip(cred, true)}
+                                title="Send WhatsApp Payment Reminder"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs cursor-pointer"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" /> Reminder
+                              </button>
+                              <button
+                                onClick={() => openSettleModal(cred)}
+                                title="Record Partial or Full Payment"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 transition-all shadow-sm cursor-pointer active:scale-95"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" /> Pay / Clear
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Stock Management */}
         {activeTab === 'stock' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
             
@@ -1510,6 +1822,121 @@ export default function PrasadMedicalApp() {
         )}
 
       </main>
+
+      {/* POPUP MODAL: RECORD PAYMENT & CLEAR / SETTLE CREDIT */}
+      {settleInvoice && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-amber-50/50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">Record Payment & Settle</h3>
+                  <p className="text-xs text-slate-500">Bill: {settleInvoice.bill_no}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSettleInvoice(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleExecuteSettle} className="p-6 space-y-4">
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Customer:</span>
+                  <span className="font-bold text-slate-900">{settleInvoice.customer_name}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Original Total Bill:</span>
+                  <span className="font-semibold text-slate-800">₹{Number(settleInvoice.total_amount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Paid So Far:</span>
+                  <span className="font-semibold text-emerald-600">
+                    ₹{((Number(settleInvoice.cash_paid) || 0) + (Number(settleInvoice.upi_paid) || 0)).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs pt-1 border-t border-slate-200">
+                  <span className="font-bold text-amber-800">Current Balance Due:</span>
+                  <span className="font-black text-rose-600 text-sm">₹{Number(settleInvoice.due_amount).toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Payment Amount Receiving Now (₹)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="Enter payment amount"
+                  value={settleAmount}
+                  onChange={(e) => setSettleAmount(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-lg font-black text-slate-900 focus:outline-none focus:border-amber-600"
+                />
+                <span className="text-xs text-slate-400 mt-1 block">
+                  Enter full amount to clear account, or partial installment amount.
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Receiving Payment Method
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettlePaymentMode('CASH')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      settlePaymentMode === 'CASH'
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Cash Received
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSettlePaymentMode('UPI')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      settlePaymentMode === 'UPI'
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    Online QR / UPI
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSettleInvoice(null)}
+                  className="w-1/3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={settleLoading}
+                  className="w-2/3 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold transition-all shadow-md shadow-amber-600/25 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {settleLoading ? 'Updating Balance...' : 'Confirm & Save Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
