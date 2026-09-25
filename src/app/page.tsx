@@ -27,7 +27,8 @@ import {
   BookOpen,
   UserCheck,
   AlertCircle,
-  X
+  X,
+  RotateCcw
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -159,6 +160,13 @@ export default function PrasadMedicalApp() {
   const [settleAmount, setSettleAmount] = useState('');
   const [settlePaymentMode, setSettlePaymentMode] = useState<'CASH' | 'UPI'>('CASH');
   const [settleLoading, setSettleLoading] = useState(false);
+
+  // Return / Refund Modal States
+  const [returnInvoice, setReturnInvoice] = useState<Invoice | null>(null);
+  const [returnAmount, setReturnAmount] = useState('');
+  const [returnMode, setReturnMode] = useState<'DEDUCT_DUE' | 'REFUND_CASH' | 'REFUND_UPI'>('REFUND_CASH');
+  const [returnReason, setReturnReason] = useState('');
+  const [returnLoading, setReturnLoading] = useState(false);
 
   // Add Medicine Form
   const [newMed, setNewMed] = useState({
@@ -456,6 +464,79 @@ export default function PrasadMedicalApp() {
     }
   };
 
+  // Open Return / Refund Modal
+  const openReturnModal = (invoice: Invoice) => {
+    setReturnInvoice(invoice);
+    setReturnAmount('');
+    setReturnReason('');
+    const hasDue = Number(invoice.due_amount || 0) > 0;
+    setReturnMode(hasDue ? 'DEDUCT_DUE' : 'REFUND_CASH');
+  };
+
+  // Execute Medicine Return / Refund
+  const handleExecuteReturn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!returnInvoice) return;
+
+    const retAmount = parseFloat(returnAmount);
+    const currentTotal = Number(returnInvoice.total_amount || 0);
+    const currentDue = Number(returnInvoice.due_amount || 0);
+    const currentCash = Number(returnInvoice.cash_paid || 0);
+    const currentUpi = Number(returnInvoice.upi_paid || 0);
+
+    if (isNaN(retAmount) || retAmount <= 0) {
+      return alert('Please enter a valid return / refund amount.');
+    }
+    if (retAmount > currentTotal) {
+      return alert(`Return amount (₹${retAmount}) cannot exceed total invoice amount (₹${currentTotal}).`);
+    }
+
+    setReturnLoading(true);
+
+    const newTotal = Math.max(0, currentTotal - retAmount);
+    let newDue = currentDue;
+    let newCash = currentCash;
+    let newUpi = currentUpi;
+
+    if (returnMode === 'DEDUCT_DUE') {
+      if (retAmount > currentDue) {
+        setReturnLoading(false);
+        return alert(`Cannot deduct ₹${retAmount} from due balance of only ₹${currentDue}. Choose Cash/UPI refund for remaining.`);
+      }
+      newDue = Math.max(0, currentDue - retAmount);
+    } else if (returnMode === 'REFUND_CASH') {
+      newCash = Math.max(0, currentCash - retAmount);
+    } else if (returnMode === 'REFUND_UPI') {
+      newUpi = Math.max(0, currentUpi - retAmount);
+    }
+
+    const noteAdd = ` [Returned ₹${retAmount}${returnReason ? `: ${returnReason}` : ''}]`;
+    const updatedNotes = (returnInvoice.notes || '') + noteAdd;
+
+    const { error } = await supabase
+      .from('sales')
+      .update({
+        total_amount: newTotal,
+        subtotal: newTotal,
+        cash_paid: newCash,
+        upi_paid: newUpi,
+        due_amount: newDue,
+        is_settled: newDue === 0,
+        notes: updatedNotes.trim(),
+      })
+      .eq('id', returnInvoice.id);
+
+    setReturnLoading(false);
+
+    if (error) {
+      alert('Error recording return: ' + error.message);
+    } else {
+      alert(`✅ Medicine return of ₹${retAmount} successfully processed! Invoice updated.`);
+      setReturnInvoice(null);
+      loadData();
+    }
+  };
+
   // Checkout Bill
   const handleFinalCheckout = async () => {
     if (finalPayable <= 0) {
@@ -586,6 +667,7 @@ export default function PrasadMedicalApp() {
         `-----------------------------\n` +
         `Total Amount: ₹${Number(inv.total_amount).toFixed(2)}\n` +
         `Payment Mode: ${inv.payment_mode}\n` +
+        (inv.notes ? `Items: ${inv.notes}\n` : '') +
         `-----------------------------\n` +
         `Thank you for your visit! Get well soon.\n*Prasad Medical Store*\nJaiswal Market, Main Road Kathara`
       );
@@ -820,7 +902,7 @@ export default function PrasadMedicalApp() {
             </div>
           </div>
 
-          {/* Navigation Controls: Clean English Tabs */}
+          {/* Navigation Controls */}
           <div className="flex items-center gap-2 justify-between md:justify-end overflow-x-auto pb-0.5 md:pb-0">
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
@@ -1470,7 +1552,7 @@ export default function PrasadMedicalApp() {
 
             </div>
 
-            {/* Invoices Ledger with WhatsApp slips & Delete Option */}
+            {/* Invoices Ledger with WhatsApp slips, Return & Delete Option */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
               <div className="px-4.5 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                 <div>
@@ -1487,7 +1569,7 @@ export default function PrasadMedicalApp() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[550px] sm:min-w-full">
+                <table className="w-full text-left border-collapse min-w-[620px] sm:min-w-full">
                   <thead>
                     <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
                       <th className="py-3 px-4">Invoice No</th>
@@ -1541,6 +1623,16 @@ export default function PrasadMedicalApp() {
                                 <MessageCircle className="w-3.5 h-3.5" />
                                 WhatsApp
                               </button>
+                              
+                              {/* Return / Refund Button */}
+                              <button
+                                onClick={() => openReturnModal(inv)}
+                                title="Return Medicine / Refund Amount"
+                                className="p-1.5 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50 border border-slate-200 hover:border-sky-200 transition-all touch-manipulation active:scale-95 cursor-pointer"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+
                               <button
                                 onClick={() => handleDeleteInvoice(inv.id, inv.bill_no)}
                                 title="Delete / Cancel Invoice"
@@ -1569,7 +1661,7 @@ export default function PrasadMedicalApp() {
                 <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 tracking-tight">
                   <BookOpen className="w-4 h-4 text-amber-600" /> Credit Ledger (Customer Credit Register)
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">Record partial or full payments and send WhatsApp reminders</p>
+                <p className="text-xs text-slate-500 font-medium">Record partial or full payments, process medicine returns, and send WhatsApp reminders</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-300">
@@ -1579,7 +1671,7 @@ export default function PrasadMedicalApp() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[700px]">
+              <table className="w-full text-left border-collapse min-w-[720px]">
                 <thead>
                   <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
                     <th className="py-3 px-4">Date</th>
@@ -1620,7 +1712,7 @@ export default function PrasadMedicalApp() {
                           <td className="py-3.5 px-4 font-semibold text-emerald-600">₹{totalPaidSoFar.toFixed(2)}</td>
                           <td className="py-3.5 px-4 font-black text-rose-600 text-base">₹{Number(cred.due_amount).toFixed(2)}</td>
                           <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => sendWhatsAppSlip(cred, true)}
                                 title="Send WhatsApp Payment Reminder"
@@ -1628,6 +1720,16 @@ export default function PrasadMedicalApp() {
                               >
                                 <MessageCircle className="w-3.5 h-3.5" /> Reminder
                               </button>
+
+                              {/* Return / Refund Button on Credit Book */}
+                              <button
+                                onClick={() => openReturnModal(cred)}
+                                title="Return Medicine / Deduct from Due"
+                                className="p-1.5 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50 border border-slate-200 hover:border-sky-200 transition-all cursor-pointer"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+
                               <button
                                 onClick={() => openSettleModal(cred)}
                                 title="Record Partial or Full Payment"
@@ -1930,6 +2032,151 @@ export default function PrasadMedicalApp() {
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   {settleLoading ? 'Updating Balance...' : 'Confirm & Save Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* POPUP MODAL: PROCESS MEDICINE RETURN / REFUND */}
+      {returnInvoice && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-sky-50/50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
+                  <RotateCcw className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900">Process Medicine Return</h3>
+                  <p className="text-xs text-slate-500">Bill: {returnInvoice.bill_no}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReturnInvoice(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleExecuteReturn} className="p-6 space-y-4">
+              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Customer:</span>
+                  <span className="font-bold text-slate-900">{returnInvoice.customer_name}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Total Invoice Amount:</span>
+                  <span className="font-semibold text-slate-800">₹{Number(returnInvoice.total_amount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-500">Paid Amount:</span>
+                  <span className="font-semibold text-emerald-600">
+                    ₹{((Number(returnInvoice.cash_paid) || 0) + (Number(returnInvoice.upi_paid) || 0)).toFixed(2)}
+                  </span>
+                </div>
+                {Number(returnInvoice.due_amount || 0) > 0 && (
+                  <div className="flex justify-between text-xs pt-1 border-t border-slate-200">
+                    <span className="font-bold text-amber-800">Pending Credit Due:</span>
+                    <span className="font-black text-rose-600">₹{Number(returnInvoice.due_amount).toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  Return Value / Amount (₹) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  placeholder="Enter return amount (e.g. 50)"
+                  value={returnAmount}
+                  onChange={(e) => setReturnAmount(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-lg font-black text-slate-900 focus:outline-none focus:border-sky-600"
+                />
+                <span className="text-xs text-slate-400 mt-1 block">
+                  Kitne rupaye ka medicine customer ne wapas diya.
+                </span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                  How To Adjust This Return?
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {Number(returnInvoice.due_amount || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setReturnMode('DEDUCT_DUE')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
+                        returnMode === 'DEDUCT_DUE'
+                          ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>Deduct From Pending Udhar</span>
+                      <span className="text-2xs opacity-80">(Baki Udhar kam karein)</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setReturnMode('REFUND_CASH')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
+                      returnMode === 'REFUND_CASH'
+                        ? 'bg-sky-600 text-white border-sky-600 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Refund Cash To Customer</span>
+                    <span className="text-2xs opacity-80">(Counter cash se wapas)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReturnMode('REFUND_UPI')}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
+                      returnMode === 'REFUND_UPI'
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Refund Online via UPI</span>
+                    <span className="text-2xs opacity-80">(Bank UPI se wapas)</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                  Medicine Name / Return Reason (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Paracetamol 1 strip returned"
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-600"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReturnInvoice(null)}
+                  className="w-1/3 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={returnLoading}
+                  className="w-2/3 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold transition-all shadow-md shadow-sky-600/25 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {returnLoading ? 'Processing Return...' : 'Confirm Return & Refund'}
                 </button>
               </div>
             </form>
