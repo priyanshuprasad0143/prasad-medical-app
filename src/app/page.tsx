@@ -111,15 +111,19 @@ export default function PrasadMedicalApp() {
   // Tabs: 'pos' | 'stock' | 'credit'
   const [activeTab, setActiveTab] = useState<'pos' | 'stock' | 'credit'>('pos');
 
-  // Time Filter States
+  // Time Filter States: 'today' | 'date' | 'monthly'
   const now = new Date();
-  const [filterMode, setFilterMode] = useState<'today' | 'monthly'>('today');
+  const [filterMode, setFilterMode] = useState<'today' | 'date' | 'monthly'>('today');
+  const [selectedSingleDate, setSelectedSingleDate] = useState<string>(now.toISOString().split('T')[0]);
   const [selectedMonth, setSelectedMonth] = useState<number>(now.getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
 
   // Chart states
   const [monthlyChartData, setMonthlyChartData] = useState<DailyChartItem[]>([]);
   const [activeHoverBar, setActiveHoverBar] = useState<DailyChartItem | null>(null);
+
+  // Ledger Search State
+  const [ledgerSearch, setLedgerSearch] = useState('');
 
   // Auth Inputs
   const [authEmail, setAuthEmail] = useState('');
@@ -223,6 +227,10 @@ export default function PrasadMedicalApp() {
       startDate.setHours(0, 0, 0, 0);
       endDate = new Date();
       endDate.setHours(23, 59, 59, 999);
+    } else if (filterMode === 'date') {
+      const [y, m, d] = selectedSingleDate.split('-').map(Number);
+      startDate = new Date(y, m - 1, d, 0, 0, 0, 0);
+      endDate = new Date(y, m - 1, d, 23, 59, 59, 999);
     } else {
       startDate = new Date(selectedYear, selectedMonth, 1, 0, 0, 0, 0);
       endDate = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999);
@@ -268,12 +276,14 @@ export default function PrasadMedicalApp() {
         billCount: salesData.length,
       });
 
-      setRecentInvoices(salesData.slice(0, 25));
+      setRecentInvoices(salesData);
 
-      // Calculate Daily Chart
-      const daysInCurrentMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+      // Calculate Daily Chart (Always calculates for the target month)
+      const chartYear = filterMode === 'monthly' ? selectedYear : startDate.getFullYear();
+      const chartMonth = filterMode === 'monthly' ? selectedMonth : startDate.getMonth();
+      const daysInCurrentMonth = new Date(chartYear, chartMonth + 1, 0).getDate();
+      
       const dailyMap: { [key: number]: { total: number; cash: number; upi: number; count: number } } = {};
-
       for (let d = 1; d <= daysInCurrentMonth; d++) {
         dailyMap[d] = { total: 0, cash: 0, upi: 0, count: 0 };
       }
@@ -293,7 +303,7 @@ export default function PrasadMedicalApp() {
       for (let d = 1; d <= daysInCurrentMonth; d++) {
         chartList.push({
           day: d,
-          dateStr: `${d} ${MONTHS[selectedMonth].slice(0, 3)}`,
+          dateStr: `${d} ${MONTHS[chartMonth].slice(0, 3)}`,
           total: dailyMap[d].total,
           cash: dailyMap[d].cash,
           upi: dailyMap[d].upi,
@@ -321,7 +331,7 @@ export default function PrasadMedicalApp() {
     if (currentUser) {
       loadData();
     }
-  }, [currentUser, filterMode, selectedMonth, selectedYear]);
+  }, [currentUser, filterMode, selectedSingleDate, selectedMonth, selectedYear]);
 
   // Auth Handlers
   const handleLogin = async (e: React.FormEvent) => {
@@ -724,6 +734,17 @@ export default function PrasadMedicalApp() {
       m.batch_no.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Ledger Filter by Search (Bill No, Customer Name, Phone)
+  const filteredRecentInvoices = recentInvoices.filter((inv) => {
+    const q = ledgerSearch.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      inv.bill_no.toLowerCase().includes(q) ||
+      inv.customer_name.toLowerCase().includes(q) ||
+      (inv.customer_phone && inv.customer_phone.includes(q))
+    );
+  });
+
   // Highest earning day calculation
   const maxDaySales = Math.max(...monthlyChartData.map((d) => d.total), 1);
   const peakDayObj = monthlyChartData.reduce((prev, curr) => (curr.total > prev.total ? curr : prev), {
@@ -1001,7 +1022,7 @@ export default function PrasadMedicalApp() {
 
       <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-5 sm:py-7 space-y-5 sm:space-y-6">
         
-        {/* Dynamic Period Selector */}
+        {/* Dynamic Period Selector: Today, Specific Date, or Month */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
           <div>
             <h2 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5 tracking-tight">
@@ -1009,8 +1030,10 @@ export default function PrasadMedicalApp() {
             </h2>
             <p className="text-xs text-slate-400 font-medium">
               {filterMode === 'today'
-                ? "Live real-time counter sales, cash drawer, and credit tracking"
-                : `Audited records for ${MONTHS[selectedMonth]} ${selectedYear}`}
+                ? "Live real-time counter sales and settlement ledger for today"
+                : filterMode === 'date'
+                ? `Historical audit records for single date: ${new Date(selectedSingleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                : `Audited records for full month: ${MONTHS[selectedMonth]} ${selectedYear}`}
             </p>
           </div>
 
@@ -1027,6 +1050,16 @@ export default function PrasadMedicalApp() {
                 Today
               </button>
               <button
+                onClick={() => setFilterMode('date')}
+                className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                  filterMode === 'date'
+                    ? 'bg-white text-rose-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Specific Date
+              </button>
+              <button
                 onClick={() => setFilterMode('monthly')}
                 className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
                   filterMode === 'monthly'
@@ -1034,10 +1067,23 @@ export default function PrasadMedicalApp() {
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Select Month
+                Month
               </button>
             </div>
 
+            {/* Date Picker Input for 'date' mode */}
+            {filterMode === 'date' && (
+              <div className="flex items-center gap-1.5 w-full sm:w-auto animate-in fade-in duration-200">
+                <input
+                  type="date"
+                  value={selectedSingleDate}
+                  onChange={(e) => setSelectedSingleDate(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-600 shadow-2xs cursor-pointer"
+                />
+              </div>
+            )}
+
+            {/* Month & Year Selectors for 'monthly' mode */}
             {filterMode === 'monthly' && (
               <div className="flex items-center gap-1.5 w-full sm:w-auto animate-in fade-in duration-200">
                 <select
@@ -1552,20 +1598,38 @@ export default function PrasadMedicalApp() {
 
             </div>
 
-            {/* Invoices Ledger with WhatsApp slips, Return & Delete Option */}
+            {/* Invoices Ledger with WhatsApp slips, Return, Search & Delete Option */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-              <div className="px-4.5 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+              <div className="px-4.5 sm:px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50">
                 <div>
                   <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 tracking-tight">
                     <Clock className="w-4 h-4 text-rose-600" /> Recent Invoices Ledger
                   </h3>
                   <p className="text-xs text-slate-400 font-medium">
-                    {filterMode === 'today' ? "Showing today's counter transactions" : `Invoices for ${MONTHS[selectedMonth]} ${selectedYear}`}
+                    {filterMode === 'today'
+                      ? "Showing transactions recorded today"
+                      : filterMode === 'date'
+                      ? `Showing transactions for date ${selectedSingleDate}`
+                      : `Showing all transactions for ${MONTHS[selectedMonth]} ${selectedYear}`}
                   </p>
                 </div>
-                <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">
-                  {recentInvoices.length} Bills
-                </span>
+
+                {/* Instant Search Bar inside Ledger */}
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search bill no, name or phone..."
+                      value={ledgerSearch}
+                      onChange={(e) => setLedgerSearch(e.target.value)}
+                      className="w-full bg-white border border-slate-200 pl-8 pr-3 py-1.5 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-600 shadow-2xs"
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs whitespace-nowrap">
+                    {filteredRecentInvoices.length} Bills
+                  </span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -1574,21 +1638,21 @@ export default function PrasadMedicalApp() {
                     <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
                       <th className="py-3 px-4">Invoice No</th>
                       <th className="py-3 px-4">Customer</th>
-                      <th className="py-3 px-4">Time</th>
+                      <th className="py-3 px-4">Date & Time</th>
                       <th className="py-3 px-4">Mode</th>
                       <th className="py-3 px-4">Amount</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
-                    {recentInvoices.length === 0 ? (
+                    {filteredRecentInvoices.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="py-10 text-center text-slate-400 text-xs font-medium">
-                          No invoices recorded for this selected time period.
+                          No invoices found for the selected period or search criteria.
                         </td>
                       </tr>
                     ) : (
-                      recentInvoices.map((inv) => (
+                      filteredRecentInvoices.map((inv) => (
                         <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-3 px-4 font-mono font-bold text-xs text-slate-700">{inv.bill_no}</td>
                           <td className="py-3 px-4">
@@ -1596,7 +1660,8 @@ export default function PrasadMedicalApp() {
                             <span className="text-xs text-slate-400">{inv.customer_phone || 'Walk-in'}</span>
                           </td>
                           <td className="py-3 px-4 text-xs text-slate-500 font-medium">
-                            {new Date(inv.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                            <div>{new Date(inv.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
+                            <div className="text-2xs text-slate-400">{new Date(inv.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
                           </td>
                           <td className="py-3 px-4">
                             <span
@@ -2099,7 +2164,7 @@ export default function PrasadMedicalApp() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-lg font-black text-slate-900 focus:outline-none focus:border-sky-600"
                 />
                 <span className="text-xs text-slate-400 mt-1 block">
-                  Kitne rupaye ka medicine customer ne wapas diya.
+                  Value of medicines customer is returning.
                 </span>
               </div>
 
@@ -2118,8 +2183,8 @@ export default function PrasadMedicalApp() {
                           : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      <span>Deduct From Pending Udhar</span>
-                      <span className="text-2xs opacity-80">(Baki Udhar kam karein)</span>
+                      <span>Deduct From Pending Credit Due</span>
+                      <span className="text-2xs opacity-80">(Reduce customer balance)</span>
                     </button>
                   )}
                   <button
@@ -2132,7 +2197,7 @@ export default function PrasadMedicalApp() {
                     }`}
                   >
                     <span>Refund Cash To Customer</span>
-                    <span className="text-2xs opacity-80">(Counter cash se wapas)</span>
+                    <span className="text-2xs opacity-80">(Cash drawer refund)</span>
                   </button>
                   <button
                     type="button"
@@ -2144,7 +2209,7 @@ export default function PrasadMedicalApp() {
                     }`}
                   >
                     <span>Refund Online via UPI</span>
-                    <span className="text-2xs opacity-80">(Bank UPI se wapas)</span>
+                    <span className="text-2xs opacity-80">(Bank settlement refund)</span>
                   </button>
                 </div>
               </div>
