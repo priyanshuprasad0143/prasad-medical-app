@@ -148,7 +148,8 @@ export default function PrasadMedicalApp() {
   const [inventory, setInventory] = useState<Medicine[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Customer & Payment Form
+  // Customer & Payment Form (Added customInvoiceDate for backdated entry)
+  const [customInvoiceDate, setCustomInvoiceDate] = useState<string>(now.toISOString().split('T')[0]);
   const [directAmount, setDirectAmount] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -547,7 +548,7 @@ export default function PrasadMedicalApp() {
     }
   };
 
-  // Checkout Bill
+  // Checkout Bill (Supports Backdated Entry via customInvoiceDate)
   const handleFinalCheckout = async () => {
     if (finalPayable <= 0) {
       return alert('Please enter a valid bill amount or add medicines to cart.');
@@ -592,6 +593,11 @@ export default function PrasadMedicalApp() {
       autoNotes = cart.map((i) => `${i.name} (${i.qty}x)`).join(', ');
     }
 
+    // Set correct timestamp based on chosen date
+    const selectedDateObj = new Date(customInvoiceDate);
+    const currentClock = new Date();
+    selectedDateObj.setHours(currentClock.getHours(), currentClock.getMinutes(), currentClock.getSeconds());
+
     const { data: saleData, error: saleErr } = await supabase
       .from('sales')
       .insert([
@@ -607,6 +613,7 @@ export default function PrasadMedicalApp() {
           due_amount: finalDue,
           notes: autoNotes || null,
           is_settled: finalDue === 0,
+          created_at: selectedDateObj.toISOString(),
         },
       ])
       .select()
@@ -645,7 +652,7 @@ export default function PrasadMedicalApp() {
     alert(
       paymentMode === 'CREDIT'
         ? `Invoice ${billNo} recorded with credit due of ₹${finalDue.toFixed(2)}.`
-        : `Invoice ${billNo} generated successfully.`
+        : `Invoice ${billNo} generated successfully for ${customInvoiceDate}.`
     );
   };
 
@@ -1410,6 +1417,19 @@ export default function PrasadMedicalApp() {
                       <Banknote className="w-4 h-4 text-rose-600" /> Payment & Billing
                     </h3>
                     <span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">POS Terminal</span>
+                  </div>
+
+                  {/* Backdated Bill Date Selector */}
+                  <div className="p-2.5 bg-slate-100/70 border border-slate-200 rounded-xl flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-rose-600" /> Bill Entry Date:
+                    </label>
+                    <input
+                      type="date"
+                      value={customInvoiceDate}
+                      onChange={(e) => setCustomInvoiceDate(e.target.value)}
+                      className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:outline-none focus:border-rose-600 shadow-2xs"
+                    />
                   </div>
 
                   {/* Manual Bill Amount Input */}
