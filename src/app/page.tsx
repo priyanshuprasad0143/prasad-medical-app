@@ -148,7 +148,7 @@ export default function PrasadMedicalApp() {
   const [inventory, setInventory] = useState<Medicine[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Customer & Payment Form (Added customInvoiceDate for backdated entry)
+  // Customer & Payment Form
   const [customInvoiceDate, setCustomInvoiceDate] = useState<string>(now.toISOString().split('T')[0]);
   const [directAmount, setDirectAmount] = useState('');
   const [customerName, setCustomerName] = useState('');
@@ -548,7 +548,7 @@ export default function PrasadMedicalApp() {
     }
   };
 
-  // Checkout Bill (Supports Backdated Entry via customInvoiceDate)
+  // Checkout Bill
   const handleFinalCheckout = async () => {
     if (finalPayable <= 0) {
       return alert('Please enter a valid bill amount or add medicines to cart.');
@@ -593,7 +593,6 @@ export default function PrasadMedicalApp() {
       autoNotes = cart.map((i) => `${i.name} (${i.qty}x)`).join(', ');
     }
 
-    // Set correct timestamp based on chosen date
     const selectedDateObj = new Date(customInvoiceDate);
     const currentClock = new Date();
     selectedDateObj.setHours(currentClock.getHours(), currentClock.getMinutes(), currentClock.getSeconds());
@@ -741,7 +740,7 @@ export default function PrasadMedicalApp() {
       m.batch_no.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Ledger Filter by Search (Bill No, Customer Name, Phone)
+  // Ledger Filter by Search
   const filteredRecentInvoices = recentInvoices.filter((inv) => {
     const q = ledgerSearch.toLowerCase().trim();
     if (!q) return true;
@@ -860,25 +859,25 @@ export default function PrasadMedicalApp() {
     );
   }
 
-  // 2. ULTRA PREMIUM POS DASHBOARD
+  // 2. ULTRA RESPONSIVE & PREMIUM POS DASHBOARD
   return (
     <div className="min-h-screen bg-slate-50/80 text-slate-800 font-sans antialiased selection:bg-rose-500 selection:text-white">
       {/* Top Clinical Header */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
           
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <MedicalLogo size="md" />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base sm:text-lg font-black tracking-tight text-slate-900">PRASAD MEDICAL</h1>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                  <h1 className="text-sm sm:text-lg font-black tracking-tight text-slate-900">PRASAD MEDICAL</h1>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
                     Terminal Live
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 font-medium truncate max-w-[210px] sm:max-w-none flex items-center gap-1.5">
+                <p className="text-2xs sm:text-xs text-slate-400 font-medium truncate max-w-[200px] sm:max-w-none flex items-center gap-1.5">
                   <span>Jaiswal Market, Main Road Kathara</span>
                 </p>
               </div>
@@ -905,14 +904,14 @@ export default function PrasadMedicalApp() {
               </button>
 
               {isProfileOpen && (
-                <div className="absolute right-3 top-14 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150">
+                <div className="absolute right-3 top-14 w-60 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150">
                   <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                    <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-sm uppercase shadow-sm">
+                    <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
                       {currentUser.email ? currentUser.email.charAt(0) : 'P'}
                     </div>
                     <div className="truncate">
-                      <p className="text-xs font-bold text-slate-900 truncate">{currentUser.email}</p>
-                      <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Store Admin</span>
+                      <p className="text-2xs font-bold text-slate-900 truncate">{currentUser.email}</p>
+                      <span className="text-3xs font-bold text-emerald-600 bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200">Store Admin</span>
                     </div>
                   </div>
 
@@ -930,125 +929,127 @@ export default function PrasadMedicalApp() {
             </div>
           </div>
 
-          {/* Navigation Controls */}
-          <div className="flex items-center gap-2 justify-between md:justify-end overflow-x-auto pb-0.5 md:pb-0">
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          {/* Navigation Controls: Fully responsive wrapping */}
+          <div className="flex flex-wrap items-center gap-2 justify-between md:justify-end pb-0.5 md:pb-0">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto justify-center">
               <button
                 onClick={() => setActiveTab('pos')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 touch-manipulation cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
                   activeTab === 'pos'
                     ? 'bg-white text-rose-600 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <ShoppingCart className="w-3.5 h-3.5 text-rose-600" /> POS Counter
+                <ShoppingCart className="w-3 h-3 text-rose-600" /> POS
               </button>
               <button
                 onClick={() => setActiveTab('credit')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 touch-manipulation cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
                   activeTab === 'credit'
                     ? 'bg-white text-amber-600 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <BookOpen className="w-3.5 h-3.5 text-amber-600" /> Credit Ledger ({creditInvoices.length})
+                <BookOpen className="w-3 h-3 text-amber-600" /> Credit ({creditInvoices.length})
               </button>
               <button
                 onClick={() => setActiveTab('stock')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 touch-manipulation cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
                   activeTab === 'stock'
                     ? 'bg-white text-rose-600 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Layers className="w-3.5 h-3.5 text-rose-600" /> Inventory ({inventory.length})
+                <Layers className="w-3 h-3 text-rose-600" /> Stock ({inventory.length})
               </button>
             </div>
 
-            <button
-              onClick={loadData}
-              title="Refresh Analytics"
-              className="p-2 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs shrink-0 active:scale-95 cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-rose-600' : ''}`} />
-            </button>
+            <div className="flex items-center gap-2 ml-auto sm:ml-0">
+              <button
+                onClick={loadData}
+                title="Refresh Analytics"
+                className="p-2 text-slate-500 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs shrink-0 active:scale-95 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-rose-600' : ''}`} />
+              </button>
 
-            {/* Desktop User Avatar & Direct Logout */}
-            <div className="hidden md:flex items-center gap-2 ml-1" ref={desktopProfileRef}>
-              <div className="relative">
+              {/* Desktop User Avatar & Direct Logout */}
+              <div className="hidden md:flex items-center gap-2" ref={desktopProfileRef}>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileOpen((prev) => !prev)}
+                    className="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 transition-all border border-slate-200 shadow-2xs cursor-pointer"
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-rose-600 to-rose-500 text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                      {currentUser.email ? currentUser.email.charAt(0) : 'P'}
+                    </div>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </button>
+
+                  {isProfileOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150">
+                      <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+                        <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-sm uppercase shadow-sm">
+                          {currentUser.email ? currentUser.email.charAt(0) : 'P'}
+                        </div>
+                        <div className="truncate">
+                          <p className="text-xs font-bold text-slate-900 truncate">{currentUser.email}</p>
+                          <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Store Admin</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-2.5">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4" /> Sign Out Portal
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setIsProfileOpen((prev) => !prev)}
-                  className="flex items-center gap-2 p-1.5 pl-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 transition-all border border-slate-200 shadow-2xs cursor-pointer"
+                  onClick={handleLogout}
+                  title="Sign Out Portal"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-rose-600 to-rose-500 text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
-                    {currentUser.email ? currentUser.email.charAt(0) : 'P'}
-                  </div>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
                 </button>
-
-                {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in duration-150">
-                    <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-                      <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-sm uppercase shadow-sm">
-                        {currentUser.email ? currentUser.email.charAt(0) : 'P'}
-                      </div>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-slate-900 truncate">{currentUser.email}</p>
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Store Admin</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2.5">
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                      >
-                        <LogOut className="w-4 h-4" /> Sign Out Portal
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                title="Sign Out Portal"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Logout</span>
-              </button>
             </div>
 
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 py-5 sm:py-7 space-y-5 sm:space-y-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-7 space-y-4 sm:space-y-6">
         
-        {/* Dynamic Period Selector: Today, Specific Date, or Month */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
+        {/* Dynamic Period Selector */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
           <div>
             <h2 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5 tracking-tight">
               <Calendar className="w-4 h-4 text-rose-600" /> Financial Settlement Engine
             </h2>
-            <p className="text-xs text-slate-400 font-medium">
+            <p className="text-2xs sm:text-xs text-slate-400 font-medium">
               {filterMode === 'today'
                 ? "Live real-time counter sales and settlement ledger for today"
                 : filterMode === 'date'
-                ? `Historical audit records for single date: ${new Date(selectedSingleDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                ? `Historical audit records for single date: ${selectedSingleDate}`
                 : `Audited records for full month: ${MONTHS[selectedMonth]} ${selectedYear}`}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
             <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 w-full sm:w-auto shadow-2xs">
               <button
                 onClick={() => setFilterMode('today')}
-                className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all text-center cursor-pointer ${
                   filterMode === 'today'
                     ? 'bg-white text-rose-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -1058,7 +1059,7 @@ export default function PrasadMedicalApp() {
               </button>
               <button
                 onClick={() => setFilterMode('date')}
-                className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all text-center cursor-pointer ${
                   filterMode === 'date'
                     ? 'bg-white text-rose-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -1068,7 +1069,7 @@ export default function PrasadMedicalApp() {
               </button>
               <button
                 onClick={() => setFilterMode('monthly')}
-                className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all text-center cursor-pointer ${
                   filterMode === 'monthly'
                     ? 'bg-white text-rose-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -1078,21 +1079,19 @@ export default function PrasadMedicalApp() {
               </button>
             </div>
 
-            {/* Date Picker Input for 'date' mode */}
             {filterMode === 'date' && (
-              <div className="flex items-center gap-1.5 w-full sm:w-auto animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto">
                 <input
                   type="date"
                   value={selectedSingleDate}
                   onChange={(e) => setSelectedSingleDate(e.target.value)}
-                  className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-600 shadow-2xs cursor-pointer"
+                  className="w-full sm:w-auto bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-rose-600 shadow-2xs cursor-pointer"
                 />
               </div>
             )}
 
-            {/* Month & Year Selectors for 'monthly' mode */}
             {filterMode === 'monthly' && (
-              <div className="flex items-center gap-1.5 w-full sm:w-auto animate-in fade-in duration-200">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto">
                 <select
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -1121,60 +1120,60 @@ export default function PrasadMedicalApp() {
           </div>
         </div>
 
-        {/* 5 Financial Metric Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+        {/* 5 Financial Metric Cards: Responsive Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Revenue</span>
+              <span className="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-400">Total Revenue</span>
               <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0 border border-sky-100">
                 <Activity className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight truncate">₹{summary.totalSales.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">{summary.billCount} Invoices</p>
+            <div className="text-base sm:text-xl font-black text-slate-900 tracking-tight truncate">₹{summary.totalSales.toLocaleString('en-IN')}</div>
+            <p className="text-2xs sm:text-xs text-slate-500 mt-1 font-semibold">{summary.billCount} Invoices</p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Cash In Hand</span>
+              <span className="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-400">Cash In Hand</span>
               <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                 <Banknote className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-lg sm:text-xl font-black text-emerald-600 tracking-tight truncate">₹{summary.totalCash.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Counter balance</p>
+            <div className="text-base sm:text-xl font-black text-emerald-600 tracking-tight truncate">₹{summary.totalCash.toLocaleString('en-IN')}</div>
+            <p className="text-2xs sm:text-xs text-slate-500 mt-1 font-semibold">Counter balance</p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Bank / UPI</span>
+              <span className="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-400">Bank / UPI</span>
               <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
                 <QrCode className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-lg sm:text-xl font-black text-indigo-600 tracking-tight truncate">₹{summary.totalUpi.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-slate-500 mt-1 font-semibold">Bank credit</p>
+            <div className="text-base sm:text-xl font-black text-indigo-600 tracking-tight truncate">₹{summary.totalUpi.toLocaleString('en-IN')}</div>
+            <p className="text-2xs sm:text-xs text-slate-500 mt-1 font-semibold">Bank credit</p>
           </div>
 
-          <div className="bg-white border border-amber-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all">
+          <div className="bg-white border border-amber-200 rounded-2xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Market Credit</span>
+              <span className="text-2xs sm:text-xs font-bold uppercase tracking-wider text-amber-700">Market Credit</span>
               <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200">
                 <AlertCircle className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-lg sm:text-xl font-black text-amber-600 tracking-tight truncate">₹{totalMarketCredit.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-amber-700 mt-1 font-bold">{creditInvoices.length} Pending accounts</p>
+            <div className="text-base sm:text-xl font-black text-amber-600 tracking-tight truncate">₹{totalMarketCredit.toLocaleString('en-IN')}</div>
+            <p className="text-2xs sm:text-xs text-amber-700 mt-1 font-bold">{creditInvoices.length} Pending accounts</p>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all col-span-2 lg:col-span-1">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all col-span-2 md:col-span-3 lg:col-span-1">
             <div className="flex justify-between items-center text-slate-500 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Digital Share</span>
+              <span className="text-2xs sm:text-xs font-bold uppercase tracking-wider text-slate-400">Digital Share</span>
               <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100">
                 <IndianRupee className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+            <div className="text-base sm:text-xl font-black text-slate-900 tracking-tight">
               {summary.totalSales > 0 ? Math.round((summary.totalUpi / summary.totalSales) * 100) : 0}%
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
@@ -1189,7 +1188,7 @@ export default function PrasadMedicalApp() {
         </div>
 
         {/* UBER RIDE STYLE MONTHLY INCOME GRAPH CARD */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-5 relative overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-3xl p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-5 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -1197,51 +1196,51 @@ export default function PrasadMedicalApp() {
                   <BarChart3 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                    Earnings Analytics <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">{MONTHS[selectedMonth]} {selectedYear}</span>
+                  <h3 className="text-xs sm:text-base font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    Earnings Analytics <span className="text-2xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">{MONTHS[selectedMonth]} {selectedYear}</span>
                   </h3>
-                  <p className="text-xs text-slate-400 font-medium">Daily income distribution and high-revenue trends</p>
+                  <p className="text-2xs sm:text-xs text-slate-400 font-medium">Daily income distribution and high-revenue trends</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-left">
-                <span className="text-xs uppercase font-bold text-slate-400 block">Daily Average</span>
-                <span className="text-xs sm:text-sm font-extrabold text-slate-900">₹{averageDailySales.toLocaleString('en-IN')}</span>
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-xl text-left flex-1 sm:flex-initial">
+                <span className="text-3xs uppercase font-bold text-slate-400 block">Daily Average</span>
+                <span className="text-2xs sm:text-sm font-extrabold text-slate-900">₹{averageDailySales.toLocaleString('en-IN')}</span>
               </div>
-              <div className="bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-left">
-                <span className="text-xs uppercase font-bold text-emerald-600 block">Peak Day ({peakDayObj.dateStr})</span>
-                <span className="text-xs sm:text-sm font-extrabold text-emerald-700">₹{peakDayObj.total.toLocaleString('en-IN')}</span>
+              <div className="bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-xl text-left flex-1 sm:flex-initial">
+                <span className="text-3xs uppercase font-bold text-emerald-600 block">Peak Day ({peakDayObj.dateStr})</span>
+                <span className="text-2xs sm:text-sm font-extrabold text-emerald-700">₹{peakDayObj.total.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
 
           {/* Active Hover / Touch Insight Strip */}
-          <div className="h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+          <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-2xs sm:text-xs">
             {activeHoverBar ? (
               <>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse shrink-0"></span>
                   <span className="font-bold text-slate-800">{activeHoverBar.dateStr}:</span>
-                  <span className="font-black text-rose-600 text-sm">₹{activeHoverBar.total.toFixed(2)}</span>
-                  <span className="text-xs text-slate-400 font-medium">({activeHoverBar.count} orders)</span>
+                  <span className="font-black text-rose-600">₹{activeHoverBar.total.toFixed(2)}</span>
+                  <span className="text-3xs text-slate-400 hidden sm:inline">({activeHoverBar.count} orders)</span>
                 </div>
-                <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
-                  <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">Cash: ₹{activeHoverBar.cash.toFixed(0)}</span>
-                  <span className="text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">UPI: ₹{activeHoverBar.upi.toFixed(0)}</span>
+                <div className="flex items-center gap-2 text-3xs sm:text-xs font-semibold shrink-0">
+                  <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Cash: ₹{activeHoverBar.cash.toFixed(0)}</span>
+                  <span className="text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">UPI: ₹{activeHoverBar.upi.toFixed(0)}</span>
                 </div>
               </>
             ) : (
-              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-rose-500" /> Hover or tap on any bar to inspect daily revenue, cash, and digital breakdown
+              <span className="text-2xs sm:text-xs text-slate-400 font-medium flex items-center gap-1.5 truncate">
+                <Sparkles className="w-3.5 h-3.5 text-rose-500 shrink-0" /> Tap or hover on any bar to inspect daily breakdown
               </span>
             )}
           </div>
 
           {/* Uber Bar Chart */}
           <div className="w-full overflow-x-auto pb-2 pt-2">
-            <div className="h-44 sm:h-52 flex items-end gap-1.5 sm:gap-2 min-w-[580px] sm:min-w-full px-1">
+            <div className="h-40 sm:h-52 flex items-end gap-1 sm:gap-2 min-w-[560px] sm:min-w-full px-1">
               {monthlyChartData.map((d) => {
                 const heightPercent = maxDaySales > 0 && d.total > 0 ? Math.max(Math.round((d.total / maxDaySales) * 100), 8) : 4;
                 const isSelected = activeHoverBar?.day === d.day;
@@ -1255,7 +1254,7 @@ export default function PrasadMedicalApp() {
                     className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer relative"
                   >
                     {isPeak && (
-                      <div className="absolute -top-6 bg-emerald-600 text-white text-xs font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 animate-bounce">
+                      <div className="absolute -top-6 bg-emerald-600 text-white text-3xs font-black px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-0.5 animate-bounce">
                         <Award className="w-2.5 h-2.5" /> Max
                       </div>
                     )}
@@ -1263,7 +1262,7 @@ export default function PrasadMedicalApp() {
                     <div className="w-full flex flex-col items-center justify-end h-full">
                       <div
                         style={{ height: `${heightPercent}%` }}
-                        className={`w-full max-w-[18px] sm:max-w-[24px] rounded-t-lg transition-all duration-300 relative ${
+                        className={`w-full max-w-[16px] sm:max-w-[24px] rounded-t-lg transition-all duration-300 relative ${
                           d.total === 0
                             ? 'bg-slate-100 group-hover:bg-slate-200'
                             : isSelected
@@ -1276,7 +1275,7 @@ export default function PrasadMedicalApp() {
                     </div>
 
                     <span
-                      className={`text-xs mt-2 font-mono font-bold transition-colors ${
+                      className={`text-3xs sm:text-xs mt-2 font-mono font-bold transition-colors ${
                         isSelected ? 'text-rose-600 font-black' : 'text-slate-400 group-hover:text-slate-700'
                       }`}
                     >
@@ -1291,19 +1290,19 @@ export default function PrasadMedicalApp() {
 
         {/* Tab 1: Billing Counter (POS) */}
         {activeTab === 'pos' && (
-          <div className="space-y-5 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
               
               {/* Left Column: Search & Current Cart */}
               <div className="lg:col-span-7 space-y-4">
                 
                 {/* Medicine Search Box */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-4.5 shadow-xs space-y-3">
+                <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4.5 shadow-xs space-y-3">
                   <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-1">
                     <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
                       <Search className="w-3.5 h-3.5 text-rose-600" /> Search Catalog
                     </span>
-                    <span className="text-xs font-medium text-slate-400">Search medicine or enter direct bill on the right panel</span>
+                    <span className="text-2xs sm:text-xs font-medium text-slate-400">Search medicine or enter direct bill on the right panel</span>
                   </div>
                   <div className="relative">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -1329,13 +1328,13 @@ export default function PrasadMedicalApp() {
                           >
                             <div className="pr-2">
                               <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight">{med.name}</p>
-                              <p className="text-xs text-slate-400 mt-0.5">
+                              <p className="text-2xs sm:text-xs text-slate-400 mt-0.5">
                                 Batch: <span className="font-mono text-slate-600">{med.batch_no}</span> • Stock: <span className="font-bold text-slate-700">{med.stock_qty} pcs</span>
                               </p>
                             </div>
                             <div className="text-right shrink-0">
                               <span className="text-xs sm:text-sm font-extrabold text-rose-600">₹{med.selling_price}</span>
-                              <span className="block text-xs text-slate-400 line-through">MRP: ₹{med.mrp}</span>
+                              <span className="block text-3xs sm:text-xs text-slate-400 line-through">MRP: ₹{med.mrp}</span>
                             </div>
                           </div>
                         ))
@@ -1346,36 +1345,36 @@ export default function PrasadMedicalApp() {
 
                 {/* Cart Box */}
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-                  <div className="px-4.5 py-3.5 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                  <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
                     <h3 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-2">
                       <ShoppingCart className="w-4 h-4 text-rose-600" /> Current Invoice Cart
                     </h3>
-                    <span className="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-full border border-slate-200">{cart.length} Items Added</span>
+                    <span className="text-2xs sm:text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-full border border-slate-200">{cart.length} Items Added</span>
                   </div>
 
                   {cart.length === 0 ? (
-                    <div className="p-8 sm:p-10 text-center bg-slate-50/30">
+                    <div className="p-6 sm:p-10 text-center bg-slate-50/30">
                       <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center mx-auto mb-2 font-bold shadow-2xs">
                         ₹
                       </div>
                       <p className="text-xs sm:text-sm font-bold text-slate-700">Cart is empty</p>
-                      <p className="text-xs text-slate-400 mt-0.5 max-w-xs mx-auto">
+                      <p className="text-2xs sm:text-xs text-slate-400 mt-0.5 max-w-xs mx-auto">
                         Search and pick medicines above, or directly enter total amount on right panel.
                       </p>
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-100">
-                      <div className="grid grid-cols-12 px-4 py-2.5 bg-slate-50 text-xs font-bold uppercase text-slate-400 tracking-wider">
+                      <div className="grid grid-cols-12 px-3 sm:px-4 py-2.5 bg-slate-50 text-3xs sm:text-xs font-bold uppercase text-slate-400 tracking-wider">
                         <div className="col-span-5">Item</div>
                         <div className="col-span-2 text-center">Rate</div>
                         <div className="col-span-3 text-center">Qty</div>
                         <div className="col-span-2 text-right">Subtotal</div>
                       </div>
                       {cart.map((item) => (
-                        <div key={item.id} className="grid grid-cols-12 px-4 py-3 items-center text-xs sm:text-sm hover:bg-slate-50 transition-colors">
+                        <div key={item.id} className="grid grid-cols-12 px-3 sm:px-4 py-3 items-center text-xs sm:text-sm hover:bg-slate-50 transition-colors">
                           <div className="col-span-5 pr-2">
                             <p className="font-bold text-slate-900 leading-tight truncate">{item.name}</p>
-                            <span className="text-xs text-slate-400 font-mono">B: {item.batch_no}</span>
+                            <span className="text-3xs sm:text-xs text-slate-400 font-mono">B: {item.batch_no}</span>
                           </div>
                           <div className="col-span-2 text-center font-medium text-slate-700">₹{item.selling_price}</div>
                           <div className="col-span-3 flex items-center justify-center gap-1">
@@ -1409,33 +1408,33 @@ export default function PrasadMedicalApp() {
                 </div>
               </div>
 
-              {/* Right Column: Checkout & Payment Terminal with Credit Mode */}
+              {/* Right Column: Checkout & Payment Terminal */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4 relative overflow-hidden">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                       <Banknote className="w-4 h-4 text-rose-600" /> Payment & Billing
                     </h3>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">POS Terminal</span>
+                    <span className="text-2xs sm:text-xs font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-600 border border-rose-200">POS Terminal</span>
                   </div>
 
                   {/* Backdated Bill Date Selector */}
-                  <div className="p-2.5 bg-slate-100/70 border border-slate-200 rounded-xl flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <div className="p-3 bg-slate-100/70 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-2xs sm:text-xs font-bold text-slate-700 flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-rose-600" /> Bill Entry Date:
                     </label>
                     <input
                       type="date"
                       value={customInvoiceDate}
                       onChange={(e) => setCustomInvoiceDate(e.target.value)}
-                      className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:outline-none focus:border-rose-600 shadow-2xs"
+                      className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-900 focus:outline-none focus:border-rose-600 shadow-2xs cursor-pointer"
                     />
                   </div>
 
                   {/* Manual Bill Amount Input */}
                   {cart.length === 0 && (
                     <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
-                      <label className="text-xs font-bold text-rose-800 uppercase tracking-wider block">
+                      <label className="text-2xs sm:text-xs font-bold text-rose-800 uppercase tracking-wider block">
                         Direct Bill Amount (₹) <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -1446,14 +1445,14 @@ export default function PrasadMedicalApp() {
                         onChange={(e) => setDirectAmount(e.target.value)}
                         className="w-full bg-white border border-rose-200 rounded-xl px-3.5 py-2.5 text-xl font-black text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-600"
                       />
-                      <span className="text-xs text-slate-400 font-medium block">Enter manual invoice amount if no catalog items are selected</span>
+                      <span className="text-3xs sm:text-xs text-slate-400 font-medium block">Enter manual invoice amount if no catalog items are selected</span>
                     </div>
                   )}
 
-                  {/* Customer Information (MANDATORY FOR CREDIT) */}
+                  {/* Customer Information */}
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                      <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                         Customer Name {paymentMode === 'CREDIT' ? <span className="text-rose-500">* (Mandatory for Credit)</span> : '(Optional)'}
                       </label>
                       <input
@@ -1469,7 +1468,7 @@ export default function PrasadMedicalApp() {
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                      <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                         Mobile Number {paymentMode === 'CREDIT' ? <span className="text-rose-500">* (10-Digit Mandatory)</span> : '(WhatsApp Slip)'}
                       </label>
                       <input
@@ -1487,14 +1486,14 @@ export default function PrasadMedicalApp() {
 
                   {/* Payment Method Selector */}
                   <div className="pt-2 border-t border-slate-100">
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Payment Method</label>
+                    <label className="text-2xs sm:text-xs font-bold text-slate-600 uppercase tracking-wider block mb-2">Payment Method</label>
                     <div className="grid grid-cols-4 gap-1.5">
                       {(['UPI', 'CASH', 'SPLIT', 'CREDIT'] as const).map((m) => (
                         <button
                           key={m}
                           type="button"
                           onClick={() => setPaymentMode(m)}
-                          className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all touch-manipulation cursor-pointer text-center ${
+                          className={`py-2 px-1 rounded-xl text-2xs sm:text-xs font-bold border transition-all touch-manipulation cursor-pointer text-center ${
                             paymentMode === m
                               ? m === 'CREDIT'
                                 ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-600/20'
@@ -1512,7 +1511,7 @@ export default function PrasadMedicalApp() {
                   {paymentMode === 'SPLIT' && (
                     <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
                       <div>
-                        <span className="text-xs font-bold uppercase text-slate-500 block mb-1">Cash Paid</span>
+                        <span className="text-3xs sm:text-xs font-bold uppercase text-slate-500 block mb-1">Cash Paid</span>
                         <input
                           type="number"
                           placeholder="₹ Cash"
@@ -1522,7 +1521,7 @@ export default function PrasadMedicalApp() {
                         />
                       </div>
                       <div>
-                        <span className="text-xs font-bold uppercase text-slate-500 block mb-1">UPI Paid</span>
+                        <span className="text-3xs sm:text-xs font-bold uppercase text-slate-500 block mb-1">UPI Paid</span>
                         <input
                           type="number"
                           placeholder="₹ UPI"
@@ -1539,7 +1538,7 @@ export default function PrasadMedicalApp() {
                     <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <span className="text-xs font-bold uppercase text-amber-800 block mb-1">Amount Paid Now (₹)</span>
+                          <span className="text-3xs sm:text-xs font-bold uppercase text-amber-800 block mb-1">Amount Paid Now (₹)</span>
                           <input
                             type="number"
                             placeholder="0 (Fully Due)"
@@ -1549,20 +1548,20 @@ export default function PrasadMedicalApp() {
                           />
                         </div>
                         <div>
-                          <span className="text-xs font-bold uppercase text-amber-800 block mb-1">Balance Due (Credit)</span>
-                          <div className="w-full bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-black text-rose-600">
+                          <span className="text-3xs sm:text-xs font-bold uppercase text-amber-800 block mb-1">Balance Due (Credit)</span>
+                          <div className="w-full bg-white border border-amber-300 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-black text-rose-600 truncate">
                             ₹{calculatedDue.toFixed(2)}
                           </div>
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-xs font-bold uppercase text-amber-800 block mb-1">
+                        <label className="text-3xs sm:text-xs font-bold uppercase text-amber-800 block mb-1">
                           Prescription / Medicine Notes (Optional)
                         </label>
                         <textarea
                           rows={2}
-                          placeholder="List medicines taken on credit (e.g. Paracetamol 2 strips, cough syrup)..."
+                          placeholder="List medicines taken on credit..."
                           value={creditNotes}
                           onChange={(e) => setCreditNotes(e.target.value)}
                           className="w-full bg-white border border-amber-300 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none placeholder-slate-400 font-medium"
@@ -1573,25 +1572,25 @@ export default function PrasadMedicalApp() {
 
                   {/* Summary Box */}
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
-                    <div className="flex justify-between text-xs text-slate-500 font-medium">
+                    <div className="flex justify-between text-2xs sm:text-xs text-slate-500 font-medium">
                       <span>Total Invoice</span>
                       <span>₹{finalPayable.toFixed(2)}</span>
                     </div>
                     {paymentMode === 'CREDIT' ? (
                       <>
-                        <div className="flex justify-between text-xs text-emerald-600 font-medium">
+                        <div className="flex justify-between text-2xs sm:text-xs text-emerald-600 font-medium">
                           <span>Received Now</span>
                           <span>₹{(parseFloat(paidNowAmount) || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-baseline pt-2.5 border-t border-slate-200">
                           <span className="text-xs sm:text-sm font-bold text-amber-700 uppercase tracking-wide">Credit Due</span>
-                          <span className="text-2xl sm:text-3xl font-black text-amber-600">₹{calculatedDue.toFixed(2)}</span>
+                          <span className="text-xl sm:text-2.5xl font-black text-amber-600">₹{calculatedDue.toFixed(2)}</span>
                         </div>
                       </>
                     ) : (
                       <div className="flex justify-between items-baseline pt-2.5 border-t border-slate-200">
                         <span className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wide">Net Payable</span>
-                        <span className="text-2xl sm:text-3xl font-black text-rose-600">₹{finalPayable.toFixed(2)}</span>
+                        <span className="text-xl sm:text-2.5xl font-black text-rose-600">₹{finalPayable.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
@@ -1600,17 +1599,17 @@ export default function PrasadMedicalApp() {
                     type="button"
                     disabled={submitting || finalPayable <= 0}
                     onClick={handleFinalCheckout}
-                    className={`w-full text-white font-extrabold py-3.5 rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation active:scale-[0.99] border-t border-white/20 cursor-pointer text-sm ${
+                    className={`w-full text-white font-extrabold py-3.5 rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation active:scale-[0.99] border-t border-white/20 cursor-pointer text-xs sm:text-sm ${
                       paymentMode === 'CREDIT'
                         ? 'bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 shadow-amber-600/30'
                         : 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 shadow-rose-600/30'
                     }`}
                   >
-                    <CheckCircle2 className="w-5 h-5" />
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
                     {submitting
                       ? 'Saving...'
                       : paymentMode === 'CREDIT'
-                      ? `Save Credit Bill (Due: ₹${calculatedDue.toFixed(2)})`
+                      ? `Save Credit Bill (₹${calculatedDue.toFixed(2)})`
                       : `Complete Invoice (₹${finalPayable.toFixed(2)})`}
                   </button>
                 </div>
@@ -1618,14 +1617,14 @@ export default function PrasadMedicalApp() {
 
             </div>
 
-            {/* Invoices Ledger with WhatsApp slips, Return, Search & Delete Option */}
+            {/* Invoices Ledger */}
             <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-              <div className="px-4.5 sm:px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50">
+              <div className="px-4 sm:px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50">
                 <div>
                   <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 tracking-tight">
                     <Clock className="w-4 h-4 text-rose-600" /> Recent Invoices Ledger
                   </h3>
-                  <p className="text-xs text-slate-400 font-medium">
+                  <p className="text-2xs sm:text-xs text-slate-400 font-medium">
                     {filterMode === 'today'
                       ? "Showing transactions recorded today"
                       : filterMode === 'date'
@@ -1634,7 +1633,6 @@ export default function PrasadMedicalApp() {
                   </p>
                 </div>
 
-                {/* Instant Search Bar inside Ledger */}
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <div className="relative w-full sm:w-64">
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -1646,22 +1644,22 @@ export default function PrasadMedicalApp() {
                       className="w-full bg-white border border-slate-200 pl-8 pr-3 py-1.5 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-rose-600 shadow-2xs"
                     />
                   </div>
-                  <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs whitespace-nowrap">
+                  <span className="text-2xs sm:text-xs font-bold text-slate-600 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs whitespace-nowrap">
                     {filteredRecentInvoices.length} Bills
                   </span>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[620px] sm:min-w-full">
+                <table className="w-full text-left border-collapse min-w-[650px]">
                   <thead>
-                    <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
-                      <th className="py-3 px-4">Invoice No</th>
-                      <th className="py-3 px-4">Customer</th>
-                      <th className="py-3 px-4">Date & Time</th>
-                      <th className="py-3 px-4">Mode</th>
-                      <th className="py-3 px-4">Amount</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
+                    <tr className="bg-slate-50 text-3xs sm:text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
+                      <th className="py-3 px-3 sm:px-4">Invoice No</th>
+                      <th className="py-3 px-3 sm:px-4">Customer</th>
+                      <th className="py-3 px-3 sm:px-4">Date & Time</th>
+                      <th className="py-3 px-3 sm:px-4">Mode</th>
+                      <th className="py-3 px-3 sm:px-4">Amount</th>
+                      <th className="py-3 px-3 sm:px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
@@ -1674,18 +1672,18 @@ export default function PrasadMedicalApp() {
                     ) : (
                       filteredRecentInvoices.map((inv) => (
                         <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-xs text-slate-700">{inv.bill_no}</td>
-                          <td className="py-3 px-4">
-                            <p className="font-bold text-slate-900 leading-tight truncate max-w-[140px] sm:max-w-none">{inv.customer_name}</p>
-                            <span className="text-xs text-slate-400">{inv.customer_phone || 'Walk-in'}</span>
+                          <td className="py-3 px-3 sm:px-4 font-mono font-bold text-xs text-slate-700 whitespace-nowrap">{inv.bill_no}</td>
+                          <td className="py-3 px-3 sm:px-4">
+                            <p className="font-bold text-slate-900 leading-tight truncate max-w-[120px] sm:max-w-none">{inv.customer_name}</p>
+                            <span className="text-2xs sm:text-xs text-slate-400">{inv.customer_phone || 'Walk-in'}</span>
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-500 font-medium">
+                          <td className="py-3 px-3 sm:px-4 text-2xs sm:text-xs text-slate-500 font-medium whitespace-nowrap">
                             <div>{new Date(inv.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</div>
-                            <div className="text-2xs text-slate-400">{new Date(inv.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                            <div className="text-3xs text-slate-400">{new Date(inv.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-3 px-3 sm:px-4 whitespace-nowrap">
                             <span
-                              className={`inline-block px-2 py-0.5 rounded-md text-xs font-extrabold ${
+                              className={`inline-block px-2 py-0.5 rounded-md text-2xs sm:text-xs font-extrabold ${
                                 inv.payment_mode === 'UPI'
                                   ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                   : inv.payment_mode === 'CASH'
@@ -1698,18 +1696,17 @@ export default function PrasadMedicalApp() {
                               {inv.payment_mode === 'CREDIT' ? `Credit (Due: ₹${inv.due_amount || 0})` : inv.payment_mode}
                             </span>
                           </td>
-                          <td className="py-3 px-4 font-black text-slate-900">₹{Number(inv.total_amount).toFixed(2)}</td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-3 sm:px-4 font-black text-slate-900 whitespace-nowrap">₹{Number(inv.total_amount).toFixed(2)}</td>
+                          <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => sendWhatsAppSlip(inv)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs touch-manipulation active:scale-95 cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-2xs sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs touch-manipulation active:scale-95 cursor-pointer"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
-                                WhatsApp
+                                <span className="hidden sm:inline">WhatsApp</span>
                               </button>
                               
-                              {/* Return / Refund Button */}
                               <button
                                 onClick={() => openReturnModal(inv)}
                                 title="Return Medicine / Refund Amount"
@@ -1738,15 +1735,15 @@ export default function PrasadMedicalApp() {
           </div>
         )}
 
-        {/* Tab 2: Credit Ledger (Customer Credit Register) */}
+        {/* Tab 2: Credit Ledger */}
         {activeTab === 'credit' && (
           <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden space-y-4">
-            <div className="px-5 py-4 border-b border-slate-200 bg-amber-50/40 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+            <div className="px-4 sm:px-5 py-4 border-b border-slate-200 bg-amber-50/40 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
               <div>
-                <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2 tracking-tight">
+                <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 tracking-tight">
                   <BookOpen className="w-4 h-4 text-amber-600" /> Credit Ledger (Customer Credit Register)
                 </h3>
-                <p className="text-xs text-slate-500 font-medium">Record partial or full payments, process medicine returns, and send WhatsApp reminders</p>
+                <p className="text-2xs sm:text-xs text-slate-500 font-medium">Record partial or full payments, process medicine returns, and send reminders</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-amber-800 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-300">
@@ -1758,14 +1755,14 @@ export default function PrasadMedicalApp() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[720px]">
                 <thead>
-                  <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Customer Details</th>
-                    <th className="py-3 px-4">Medicines / Notes</th>
-                    <th className="py-3 px-4">Total Bill</th>
-                    <th className="py-3 px-4">Paid So Far</th>
-                    <th className="py-3 px-4">Balance Due</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                  <tr className="bg-slate-50 text-3xs sm:text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
+                    <th className="py-3 px-3 sm:px-4">Date</th>
+                    <th className="py-3 px-3 sm:px-4">Customer Details</th>
+                    <th className="py-3 px-3 sm:px-4">Medicines / Notes</th>
+                    <th className="py-3 px-3 sm:px-4">Total Bill</th>
+                    <th className="py-3 px-3 sm:px-4">Paid So Far</th>
+                    <th className="py-3 px-3 sm:px-4">Balance Due</th>
+                    <th className="py-3 px-3 sm:px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
@@ -1781,32 +1778,31 @@ export default function PrasadMedicalApp() {
 
                       return (
                         <tr key={cred.id} className="hover:bg-amber-50/30 transition-colors">
-                          <td className="py-3.5 px-4 text-xs font-mono text-slate-500 whitespace-nowrap">
+                          <td className="py-3.5 px-3 sm:px-4 text-2xs sm:text-xs font-mono text-slate-500 whitespace-nowrap">
                             {new Date(cred.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-3 sm:px-4">
                             <p className="font-bold text-slate-900 leading-tight">{cred.customer_name}</p>
-                            <a href={`tel:${cred.customer_phone}`} className="text-xs text-teal-600 font-medium hover:underline">
+                            <a href={`tel:${cred.customer_phone}`} className="text-2xs sm:text-xs text-teal-600 font-medium hover:underline">
                               {cred.customer_phone}
                             </a>
                           </td>
-                          <td className="py-3.5 px-4 text-xs text-slate-600 max-w-[200px] truncate" title={cred.notes || ''}>
+                          <td className="py-3.5 px-3 sm:px-4 text-2xs sm:text-xs text-slate-600 max-w-[180px] truncate" title={cred.notes || ''}>
                             {cred.notes || 'Direct Bill (No medicine note)'}
                           </td>
-                          <td className="py-3.5 px-4 font-semibold text-slate-700">₹{Number(cred.total_amount).toFixed(2)}</td>
-                          <td className="py-3.5 px-4 font-semibold text-emerald-600">₹{totalPaidSoFar.toFixed(2)}</td>
-                          <td className="py-3.5 px-4 font-black text-rose-600 text-base">₹{Number(cred.due_amount).toFixed(2)}</td>
-                          <td className="py-3.5 px-4 text-right">
+                          <td className="py-3.5 px-3 sm:px-4 font-semibold text-slate-700 whitespace-nowrap">₹{Number(cred.total_amount).toFixed(2)}</td>
+                          <td className="py-3.5 px-3 sm:px-4 font-semibold text-emerald-600 whitespace-nowrap">₹{totalPaidSoFar.toFixed(2)}</td>
+                          <td className="py-3.5 px-3 sm:px-4 font-black text-rose-600 text-sm sm:text-base whitespace-nowrap">₹{Number(cred.due_amount).toFixed(2)}</td>
+                          <td className="py-3.5 px-3 sm:px-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => sendWhatsAppSlip(cred, true)}
                                 title="Send WhatsApp Payment Reminder"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-2xs sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs cursor-pointer"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" /> Reminder
                               </button>
 
-                              {/* Return / Refund Button on Credit Book */}
                               <button
                                 onClick={() => openReturnModal(cred)}
                                 title="Return Medicine / Deduct from Due"
@@ -1818,9 +1814,9 @@ export default function PrasadMedicalApp() {
                               <button
                                 onClick={() => openSettleModal(cred)}
                                 title="Record Partial or Full Payment"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 transition-all shadow-sm cursor-pointer active:scale-95"
+                                className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 transition-all shadow-sm cursor-pointer active:scale-95"
                               >
-                                <UserCheck className="w-3.5 h-3.5" /> Pay / Clear
+                                <UserCheck className="w-3.5 h-3.5" /> Pay
                               </button>
                             </div>
                           </td>
@@ -1836,20 +1832,20 @@ export default function PrasadMedicalApp() {
 
         {/* Tab 3: Stock Management */}
         {activeTab === 'stock' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
             
             <div className="lg:col-span-4">
-              <form onSubmit={handleAddNewMedicine} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 lg:sticky lg:top-24">
+              <form onSubmit={handleAddNewMedicine} className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4 lg:sticky lg:top-24">
                 <div>
                   <h3 className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5 tracking-tight">
                     <Plus className="w-4 h-4 text-rose-600" /> New Inventory Entry
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Only Name, Selling Rate & Stock are required</p>
+                  <p className="text-2xs sm:text-xs text-slate-400 mt-0.5">Only Name, Selling Rate & Stock are required</p>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                    <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                       Medicine Name <span className="text-rose-500">*</span>
                     </label>
                     <input
@@ -1864,7 +1860,7 @@ export default function PrasadMedicalApp() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                      <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                         Selling Rate (₹) <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -1878,7 +1874,7 @@ export default function PrasadMedicalApp() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                      <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                         Stock Units <span className="text-rose-500">*</span>
                       </label>
                       <input
@@ -1894,13 +1890,13 @@ export default function PrasadMedicalApp() {
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 space-y-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
+                  <span className="text-3xs sm:text-xs font-bold uppercase tracking-wider text-slate-400 block">
                     Optional Details (Auto-generated if empty)
                   </span>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Batch No</label>
+                      <label className="text-3xs sm:text-xs font-bold uppercase text-slate-500 block mb-1">Batch No</label>
                       <input
                         type="text"
                         placeholder="Auto"
@@ -1910,7 +1906,7 @@ export default function PrasadMedicalApp() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Expiry Date</label>
+                      <label className="text-3xs sm:text-xs font-bold uppercase text-slate-500 block mb-1">Expiry Date</label>
                       <input
                         type="date"
                         value={newMed.expiry_date}
@@ -1922,7 +1918,7 @@ export default function PrasadMedicalApp() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Purchase (₹)</label>
+                      <label className="text-3xs sm:text-xs font-bold uppercase text-slate-500 block mb-1">Purchase (₹)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -1933,7 +1929,7 @@ export default function PrasadMedicalApp() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-bold uppercase text-slate-500 block mb-1">MRP (₹)</label>
+                      <label className="text-3xs sm:text-xs font-bold uppercase text-slate-500 block mb-1">MRP (₹)</label>
                       <input
                         type="number"
                         step="0.01"
@@ -1957,20 +1953,20 @@ export default function PrasadMedicalApp() {
             </div>
 
             <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-              <div className="px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
+              <div className="px-4 sm:px-5 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                 <h3 className="font-bold text-slate-900 text-xs sm:text-sm tracking-tight">Pharmacy Stock Directory</h3>
-                <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">Total Items: {inventory.length}</span>
+                <span className="text-2xs sm:text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">Total Items: {inventory.length}</span>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[500px] sm:min-w-full">
                   <thead>
-                    <tr className="bg-slate-50 text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
-                      <th className="py-3 px-4">Item Name</th>
-                      <th className="py-3 px-4">Batch</th>
-                      <th className="py-3 px-4">Expiry</th>
-                      <th className="py-3 px-4">Selling Rate</th>
-                      <th className="py-3 px-4 text-right">Available Stock</th>
+                    <tr className="bg-slate-50 text-3xs sm:text-xs uppercase text-slate-400 font-bold border-b border-slate-200">
+                      <th className="py-3 px-3 sm:px-4">Item Name</th>
+                      <th className="py-3 px-3 sm:px-4">Batch</th>
+                      <th className="py-3 px-3 sm:px-4">Expiry</th>
+                      <th className="py-3 px-3 sm:px-4">Selling Rate</th>
+                      <th className="py-3 px-3 sm:px-4 text-right">Available Stock</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
@@ -1983,13 +1979,13 @@ export default function PrasadMedicalApp() {
                     ) : (
                       inventory.map((m) => (
                         <tr key={m.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="py-3 px-4 font-bold text-slate-900">{m.name}</td>
-                          <td className="py-3 px-4 text-xs font-mono text-slate-500">{m.batch_no}</td>
-                          <td className="py-3 px-4 text-xs text-slate-600 font-medium">{m.expiry_date}</td>
-                          <td className="py-3 px-4 font-black text-rose-600">₹{m.selling_price}</td>
-                          <td className="py-3 px-4 text-right">
+                          <td className="py-3 px-3 sm:px-4 font-bold text-slate-900">{m.name}</td>
+                          <td className="py-3 px-3 sm:px-4 text-2xs sm:text-xs font-mono text-slate-500">{m.batch_no}</td>
+                          <td className="py-3 px-3 sm:px-4 text-2xs sm:text-xs text-slate-600 font-medium">{m.expiry_date}</td>
+                          <td className="py-3 px-3 sm:px-4 font-black text-rose-600 whitespace-nowrap">₹{m.selling_price}</td>
+                          <td className="py-3 px-3 sm:px-4 text-right whitespace-nowrap">
                             <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-2xs sm:text-xs font-bold ${
                                 m.stock_qty <= 10
                                   ? 'bg-rose-50 text-rose-600 border border-rose-200'
                                   : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -2010,18 +2006,18 @@ export default function PrasadMedicalApp() {
 
       </main>
 
-      {/* POPUP MODAL: RECORD PAYMENT & CLEAR / SETTLE CREDIT */}
+      {/* POPUP MODAL: SETTLE CREDIT */}
       {settleInvoice && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-amber-50/50">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-amber-50/50">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
                   <UserCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">Record Payment & Settle</h3>
-                  <p className="text-xs text-slate-500">Bill: {settleInvoice.bill_no}</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">Record Payment & Settle</h3>
+                  <p className="text-3xs sm:text-xs text-slate-500">Bill: {settleInvoice.bill_no}</p>
                 </div>
               </div>
               <button
@@ -2032,30 +2028,30 @@ export default function PrasadMedicalApp() {
               </button>
             </div>
 
-            <form onSubmit={handleExecuteSettle} className="p-6 space-y-4">
+            <form onSubmit={handleExecuteSettle} className="p-5 sm:p-6 space-y-4">
               <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5">
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-2xs sm:text-xs">
                   <span className="text-slate-500">Customer:</span>
                   <span className="font-bold text-slate-900">{settleInvoice.customer_name}</span>
                 </div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-2xs sm:text-xs">
                   <span className="text-slate-500">Original Total Bill:</span>
                   <span className="font-semibold text-slate-800">₹{Number(settleInvoice.total_amount).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-2xs sm:text-xs">
                   <span className="text-slate-500">Paid So Far:</span>
                   <span className="font-semibold text-emerald-600">
                     ₹{((Number(settleInvoice.cash_paid) || 0) + (Number(settleInvoice.upi_paid) || 0)).toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between text-xs pt-1 border-t border-slate-200">
+                <div className="flex justify-between text-2xs sm:text-xs pt-1 border-t border-slate-200">
                   <span className="font-bold text-amber-800">Current Balance Due:</span>
-                  <span className="font-black text-rose-600 text-sm">₹{Number(settleInvoice.due_amount).toFixed(2)}</span>
+                  <span className="font-black text-rose-600 text-xs sm:text-sm">₹{Number(settleInvoice.due_amount).toFixed(2)}</span>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
                   Payment Amount Receiving Now (₹)
                 </label>
                 <input
@@ -2065,22 +2061,19 @@ export default function PrasadMedicalApp() {
                   placeholder="Enter payment amount"
                   value={settleAmount}
                   onChange={(e) => setSettleAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-lg font-black text-slate-900 focus:outline-none focus:border-amber-600"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base sm:text-lg font-black text-slate-900 focus:outline-none focus:border-amber-600"
                 />
-                <span className="text-xs text-slate-400 mt-1 block">
-                  Enter full amount to clear account, or partial installment amount.
-                </span>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
                   Receiving Payment Method
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setSettlePaymentMode('CASH')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl text-2xs sm:text-xs font-bold border transition-all cursor-pointer ${
                       settlePaymentMode === 'CASH'
                         ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -2091,7 +2084,7 @@ export default function PrasadMedicalApp() {
                   <button
                     type="button"
                     onClick={() => setSettlePaymentMode('UPI')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    className={`py-2 px-3 rounded-xl text-2xs sm:text-xs font-bold border transition-all cursor-pointer ${
                       settlePaymentMode === 'UPI'
                         ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -2116,7 +2109,7 @@ export default function PrasadMedicalApp() {
                   className="w-2/3 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold transition-all shadow-md shadow-amber-600/25 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  {settleLoading ? 'Updating Balance...' : 'Confirm & Save Payment'}
+                  {settleLoading ? 'Updating...' : 'Confirm Payment'}
                 </button>
               </div>
             </form>
@@ -2124,18 +2117,18 @@ export default function PrasadMedicalApp() {
         </div>
       )}
 
-      {/* POPUP MODAL: PROCESS MEDICINE RETURN / REFUND */}
+      {/* POPUP MODAL: PROCESS RETURN / REFUND */}
       {returnInvoice && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-sky-50/50">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-sky-50/50">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center">
                   <RotateCcw className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">Process Medicine Return</h3>
-                  <p className="text-xs text-slate-500">Bill: {returnInvoice.bill_no}</p>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">Process Medicine Return</h3>
+                  <p className="text-3xs sm:text-xs text-slate-500">Bill: {returnInvoice.bill_no}</p>
                 </div>
               </div>
               <button
@@ -2146,24 +2139,24 @@ export default function PrasadMedicalApp() {
               </button>
             </div>
 
-            <form onSubmit={handleExecuteReturn} className="p-6 space-y-4">
+            <form onSubmit={handleExecuteReturn} className="p-5 sm:p-6 space-y-4">
               <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1.5">
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-2xs sm:text-xs">
                   <span className="text-slate-500">Customer:</span>
                   <span className="font-bold text-slate-900">{returnInvoice.customer_name}</span>
                 </div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-2xs sm:text-xs">
                   <span className="text-slate-500">Total Invoice Amount:</span>
                   <span className="font-semibold text-slate-800">₹{Number(returnInvoice.total_amount).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-2xs sm:text-xs">
                   <span className="text-slate-500">Paid Amount:</span>
                   <span className="font-semibold text-emerald-600">
                     ₹{((Number(returnInvoice.cash_paid) || 0) + (Number(returnInvoice.upi_paid) || 0)).toFixed(2)}
                   </span>
                 </div>
                 {Number(returnInvoice.due_amount || 0) > 0 && (
-                  <div className="flex justify-between text-xs pt-1 border-t border-slate-200">
+                  <div className="flex justify-between text-2xs sm:text-xs pt-1 border-t border-slate-200">
                     <span className="font-bold text-amber-800">Pending Credit Due:</span>
                     <span className="font-black text-rose-600">₹{Number(returnInvoice.due_amount).toFixed(2)}</span>
                   </div>
@@ -2171,7 +2164,7 @@ export default function PrasadMedicalApp() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
                   Return Value / Amount (₹) <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -2181,15 +2174,12 @@ export default function PrasadMedicalApp() {
                   placeholder="Enter return amount (e.g. 50)"
                   value={returnAmount}
                   onChange={(e) => setReturnAmount(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-lg font-black text-slate-900 focus:outline-none focus:border-sky-600"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-base sm:text-lg font-black text-slate-900 focus:outline-none focus:border-sky-600"
                 />
-                <span className="text-xs text-slate-400 mt-1 block">
-                  Value of medicines customer is returning.
-                </span>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
+                <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
                   How To Adjust This Return?
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -2197,50 +2187,50 @@ export default function PrasadMedicalApp() {
                     <button
                       type="button"
                       onClick={() => setReturnMode('DEDUCT_DUE')}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
+                      className={`py-2 px-3 rounded-xl text-2xs sm:text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
                         returnMode === 'DEDUCT_DUE'
                           ? 'bg-amber-600 text-white border-amber-600 shadow-sm'
                           : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       <span>Deduct From Pending Credit Due</span>
-                      <span className="text-2xs opacity-80">(Reduce customer balance)</span>
+                      <span className="text-3xs opacity-80">(Reduce balance)</span>
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => setReturnMode('REFUND_CASH')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
+                    className={`py-2 px-3 rounded-xl text-2xs sm:text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
                       returnMode === 'REFUND_CASH'
                         ? 'bg-sky-600 text-white border-sky-600 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <span>Refund Cash To Customer</span>
-                    <span className="text-2xs opacity-80">(Cash drawer refund)</span>
+                    <span className="text-3xs opacity-80">(Cash drawer refund)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setReturnMode('REFUND_UPI')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
+                    className={`py-2 px-3 rounded-xl text-2xs sm:text-xs font-bold border transition-all cursor-pointer text-left flex items-center justify-between ${
                       returnMode === 'REFUND_UPI'
                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                         : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <span>Refund Online via UPI</span>
-                    <span className="text-2xs opacity-80">(Bank settlement refund)</span>
+                    <span className="text-3xs opacity-80">(Bank refund)</span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                <label className="text-2xs sm:text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
                   Medicine Name / Return Reason (Optional)
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Paracetamol 1 strip returned"
+                  placeholder="e.g. Paracetamol returned"
                   value={returnReason}
                   onChange={(e) => setReturnReason(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-sky-600"
@@ -2261,7 +2251,7 @@ export default function PrasadMedicalApp() {
                   className="w-2/3 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold transition-all shadow-md shadow-sky-600/25 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  {returnLoading ? 'Processing Return...' : 'Confirm Return & Refund'}
+                  {returnLoading ? 'Processing...' : 'Confirm Return'}
                 </button>
               </div>
             </form>
