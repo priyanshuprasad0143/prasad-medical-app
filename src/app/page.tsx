@@ -184,7 +184,7 @@ export default function PrasadMedicalApp() {
     mrp: '',
   });
 
-  // Session check
+  // Session check and PWA Service Worker Registration
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -197,6 +197,11 @@ export default function PrasadMedicalApp() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setCurrentUser(session?.user ?? null);
     });
+
+    // Register Service Worker for seamless PWA installation on mobile
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW error:', err));
+    }
 
     return () => subscription.unsubscribe();
   }, []);
@@ -859,32 +864,33 @@ export default function PrasadMedicalApp() {
     );
   }
 
-  // 2. ULTRA RESPONSIVE & PREMIUM POS DASHBOARD
+  // 2. ULTRA RESPONSIVE & FIXED HEADER POS DASHBOARD
   return (
     <div className="min-h-screen bg-slate-50/80 text-slate-800 font-sans antialiased selection:bg-rose-500 selection:text-white">
-      {/* Top Clinical Header */}
+      {/* Top Clinical Header with Responsive Text Wrapping */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
               <MedicalLogo size="md" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-sm sm:text-lg font-black tracking-tight text-slate-900">PRASAD MEDICAL</h1>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-2xs sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-xs sm:text-lg font-black tracking-tight text-slate-900 whitespace-nowrap">PRASAD MEDICAL</h1>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-3xs sm:text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs whitespace-nowrap">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
                     Terminal Live
                   </span>
                 </div>
-                <p className="text-2xs sm:text-xs text-slate-400 font-medium truncate max-w-[200px] sm:max-w-none flex items-center gap-1.5">
-                  <span>Jaiswal Market, Main Road Kathara</span>
+                {/* Fixed Address text wrapping on mobile */}
+                <p className="text-3xs sm:text-xs text-slate-400 font-medium leading-tight mt-0.5 break-words">
+                  Jaiswal Market, Main Road Kathara
                 </p>
               </div>
             </div>
 
             {/* Mobile Header Icons */}
-            <div className="md:hidden flex items-center gap-1.5" ref={mobileProfileRef}>
+            <div className="md:hidden flex items-center gap-1.5 shrink-0" ref={mobileProfileRef}>
               <button
                 onClick={handleLogout}
                 title="Direct Logout"
@@ -929,12 +935,12 @@ export default function PrasadMedicalApp() {
             </div>
           </div>
 
-          {/* Navigation Controls: Fully responsive wrapping */}
+          {/* Navigation Controls */}
           <div className="flex flex-wrap items-center gap-2 justify-between md:justify-end pb-0.5 md:pb-0">
             <div className="flex items-center gap-1 sm:gap-2 shrink-0 bg-slate-100 p-1 rounded-xl border border-slate-200 w-full sm:w-auto justify-center">
               <button
                 onClick={() => setActiveTab('pos')}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-3xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
                   activeTab === 'pos'
                     ? 'bg-white text-rose-600 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -944,7 +950,7 @@ export default function PrasadMedicalApp() {
               </button>
               <button
                 onClick={() => setActiveTab('credit')}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-3xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
                   activeTab === 'credit'
                     ? 'bg-white text-amber-600 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -954,7 +960,7 @@ export default function PrasadMedicalApp() {
               </button>
               <button
                 onClick={() => setActiveTab('stock')}
-                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-2xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-3xs sm:text-xs font-bold transition-all flex items-center justify-center gap-1 touch-manipulation cursor-pointer ${
                   activeTab === 'stock'
                     ? 'bg-white text-rose-600 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
@@ -1120,7 +1126,7 @@ export default function PrasadMedicalApp() {
           </div>
         </div>
 
-        {/* 5 Financial Metric Cards: Responsive Grid */}
+        {/* 5 Financial Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-xs relative overflow-hidden group hover:border-slate-300 transition-all">
             <div className="flex justify-between items-center text-slate-500 mb-2">
@@ -1609,8 +1615,8 @@ export default function PrasadMedicalApp() {
                     {submitting
                       ? 'Saving...'
                       : paymentMode === 'CREDIT'
-                      ? `Save Credit Bill (₹${calculatedDue.toFixed(2)})`
-                      : `Complete Invoice (₹${finalPayable.toFixed(2)})`}
+                      ? `Save Credit Bill (₹{calculatedDue.toFixed(2)})`
+                      : `Complete Invoice (₹{finalPayable.toFixed(2)})`}
                   </button>
                 </div>
               </div>
