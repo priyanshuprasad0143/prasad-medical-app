@@ -198,7 +198,6 @@ export default function PrasadMedicalApp() {
       setCurrentUser(session?.user ?? null);
     });
 
-    // Register Service Worker for seamless PWA installation on mobile
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW error:', err));
     }
@@ -249,7 +248,6 @@ export default function PrasadMedicalApp() {
       .lte('created_at', endDate.toISOString())
       .order('created_at', { ascending: false });
 
-    // Fetch All Pending Credits for Credit Ledger
     const { data: allCredits } = await supabase
       .from('sales')
       .select('*')
@@ -284,7 +282,6 @@ export default function PrasadMedicalApp() {
 
       setRecentInvoices(salesData);
 
-      // Calculate Daily Chart (Always calculates for the target month)
       const chartYear = filterMode === 'monthly' ? selectedYear : startDate.getFullYear();
       const chartMonth = filterMode === 'monthly' ? selectedMonth : startDate.getMonth();
       const daysInCurrentMonth = new Date(chartYear, chartMonth + 1, 0).getDate();
@@ -320,7 +317,6 @@ export default function PrasadMedicalApp() {
       setMonthlyChartData(chartList);
     }
 
-    // Load inventory
     const { data: medData } = await supabase
       .from('medicines')
       .select('*')
@@ -339,7 +335,6 @@ export default function PrasadMedicalApp() {
     }
   }, [currentUser, filterMode, selectedSingleDate, selectedMonth, selectedYear]);
 
-  // Auth Handlers
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -369,11 +364,9 @@ export default function PrasadMedicalApp() {
     setCart([]);
   };
 
-  // Cart operations
   const cartSubtotal = cart.reduce((acc, item) => acc + item.selling_price * item.qty, 0);
   const finalPayable = cart.length > 0 ? cartSubtotal : (parseFloat(directAmount) || 0);
 
-  // Credit / Due Calculation
   const upfrontPaid = paymentMode === 'CREDIT' ? (parseFloat(paidNowAmount) || 0) : finalPayable;
   const calculatedDue = paymentMode === 'CREDIT' ? Math.max(0, finalPayable - upfrontPaid) : 0;
 
@@ -403,7 +396,6 @@ export default function PrasadMedicalApp() {
     setCart(cart.filter((i) => i.id !== id));
   };
 
-  // Delete / Cancel Invoice Function
   const handleDeleteInvoice = async (invoiceId: string, billNo: string) => {
     const confirmDelete = window.confirm(`Are you sure you want to cancel and delete invoice ${billNo}?`);
     if (!confirmDelete) return;
@@ -419,14 +411,12 @@ export default function PrasadMedicalApp() {
     }
   };
 
-  // Open Settle Modal
   const openSettleModal = (invoice: Invoice) => {
     setSettleInvoice(invoice);
     setSettleAmount(String(invoice.due_amount || ''));
     setSettlePaymentMode('CASH');
   };
 
-  // Execute Partial or Full Settle
   const handleExecuteSettle = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settleInvoice) return;
@@ -480,7 +470,6 @@ export default function PrasadMedicalApp() {
     }
   };
 
-  // Open Return / Refund Modal
   const openReturnModal = (invoice: Invoice) => {
     setReturnInvoice(invoice);
     setReturnAmount('');
@@ -489,7 +478,6 @@ export default function PrasadMedicalApp() {
     setReturnMode(hasDue ? 'DEDUCT_DUE' : 'REFUND_CASH');
   };
 
-  // Execute Medicine Return / Refund
   const handleExecuteReturn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!returnInvoice) return;
@@ -553,7 +541,6 @@ export default function PrasadMedicalApp() {
     }
   };
 
-  // Checkout Bill
   const handleFinalCheckout = async () => {
     if (finalPayable <= 0) {
       return alert('Please enter a valid bill amount or add medicines to cart.');
@@ -660,7 +647,6 @@ export default function PrasadMedicalApp() {
     );
   };
 
-  // WhatsApp Slip & Reminder Generator
   const sendWhatsAppSlip = (inv: Invoice, isReminder = false) => {
     const phone = inv.customer_phone ? inv.customer_phone.replace(/\D/g, '') : '';
     
@@ -701,7 +687,6 @@ export default function PrasadMedicalApp() {
     window.open(url, '_blank');
   };
 
-  // Add Medicine
   const handleAddNewMedicine = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -745,7 +730,6 @@ export default function PrasadMedicalApp() {
       m.batch_no.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Ledger Filter by Search
   const filteredRecentInvoices = recentInvoices.filter((inv) => {
     const q = ledgerSearch.toLowerCase().trim();
     if (!q) return true;
@@ -756,7 +740,6 @@ export default function PrasadMedicalApp() {
     );
   });
 
-  // Highest earning day calculation
   const maxDaySales = Math.max(...monthlyChartData.map((d) => d.total), 1);
   const peakDayObj = monthlyChartData.reduce((prev, curr) => (curr.total > prev.total ? curr : prev), {
     day: 0,
@@ -783,7 +766,6 @@ export default function PrasadMedicalApp() {
     );
   }
 
-  // 1. ULTRA PREMIUM LOGIN SCREEN
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-rose-50/70 via-slate-50 to-slate-100 flex flex-col justify-center items-center p-4 selection:bg-rose-500 selection:text-white">
@@ -864,10 +846,9 @@ export default function PrasadMedicalApp() {
     );
   }
 
-  // 2. ULTRA RESPONSIVE & FIXED HEADER POS DASHBOARD
   return (
     <div className="min-h-screen bg-slate-50/80 text-slate-800 font-sans antialiased selection:bg-rose-500 selection:text-white">
-      {/* Top Clinical Header with Responsive Text Wrapping */}
+      {/* Top Clinical Header */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
           
@@ -882,7 +863,6 @@ export default function PrasadMedicalApp() {
                     Terminal Live
                   </span>
                 </div>
-                {/* Fixed Address text wrapping on mobile */}
                 <p className="text-3xs sm:text-xs text-slate-400 font-medium leading-tight mt-0.5 break-words">
                   Jaiswal Market, Main Road Kathara
                 </p>
@@ -979,7 +959,6 @@ export default function PrasadMedicalApp() {
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-rose-600' : ''}`} />
               </button>
 
-              {/* Desktop User Avatar & Direct Logout */}
               <div className="hidden md:flex items-center gap-2" ref={desktopProfileRef}>
                 <div className="relative">
                   <button
@@ -1222,7 +1201,6 @@ export default function PrasadMedicalApp() {
             </div>
           </div>
 
-          {/* Active Hover / Touch Insight Strip */}
           <div className="h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-2xs sm:text-xs">
             {activeHoverBar ? (
               <>
@@ -1244,7 +1222,6 @@ export default function PrasadMedicalApp() {
             )}
           </div>
 
-          {/* Uber Bar Chart */}
           <div className="w-full overflow-x-auto pb-2 pt-2">
             <div className="h-40 sm:h-52 flex items-end gap-1 sm:gap-2 min-w-[560px] sm:min-w-full px-1">
               {monthlyChartData.map((d) => {
@@ -1414,7 +1391,7 @@ export default function PrasadMedicalApp() {
                 </div>
               </div>
 
-              {/* Right Column: Checkout & Payment Terminal */}
+              {/* Right Column: Checkout & Payment Terminal (FIXED BUTTON TEMPLATE LITERAL ERROR) */}
               <div className="lg:col-span-5 space-y-4">
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4 relative overflow-hidden">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1615,8 +1592,8 @@ export default function PrasadMedicalApp() {
                     {submitting
                       ? 'Saving...'
                       : paymentMode === 'CREDIT'
-                      ? `Save Credit Bill (₹{calculatedDue.toFixed(2)})`
-                      : `Complete Invoice (₹{finalPayable.toFixed(2)})`}
+                      ? `Save Credit Bill (₹${calculatedDue.toFixed(2)})`
+                      : `Complete Invoice (₹${finalPayable.toFixed(2)})`}
                   </button>
                 </div>
               </div>
